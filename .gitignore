@@ -1,0 +1,8 @@
+
+# tests
+flightradar_test.go
+jetphotos_test.go
+scraper_test.go
+
+# coming soon
+planespotters/
