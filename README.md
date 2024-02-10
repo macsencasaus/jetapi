@@ -8,7 +8,7 @@ git clone https://github.com/macsencasaus/jetapi.git
 ```
 Then
 ```
-go run .
+go run ./cmd/api
 ```
 Will automatically serve on port :8080.
 
@@ -23,3 +23,8 @@ This will return information from both sites including images and prior flights 
 ## More
 Works best with commercial airliners. GA aircraft may cause JSON encoding errors due to the variability in FlightRadar's page. Registrations not found also return JSON encoding errors.
 
+You may also specify the port using the `-addr` flag:
+```
+go run ./cmd/api -addr=:4000
+```
+Will start the server on port `4000`. 
