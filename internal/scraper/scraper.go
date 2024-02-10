@@ -1,15 +1,65 @@
 package scraper
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/html"
 )
 
-type Scraper struct {
+type jetInfo struct {
+	Jetphotos   *jetPhotosInfo
+	FlightRadar *flightRadarInfo
+}
+
+func GetJSONData(reg string) ([]byte, error) {
+	donejp := make(chan jetPhotosRes)
+	donefr := make(chan flightRadarRes)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		getJetPhotosStruct(reg, donejp)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		getFlightRadarStruct(reg, donefr)
+	}()
+
+	go func() {
+		wg.Wait()
+		close(donejp)
+		close(donefr)
+	}()
+
+	jp := <-donejp
+	fr := <-donefr
+
+	if jp.Err != nil {
+		return nil, jp.Err
+	}
+	if fr.Err != nil {
+		return nil, fr.Err
+	}
+
+	j := jetInfo{Jetphotos: jp.Res, FlightRadar: fr.Res}
+	jsonData, err := json.Marshal(j)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonData, nil
+}
+
+type scraper struct {
 	body      io.ReadCloser
 	tokenizer *html.Tokenizer
 }
@@ -21,15 +71,15 @@ const (
 	ADVANCE
 )
 
-func NewScraper(body io.ReadCloser) *Scraper {
-	return &Scraper{body: body}
+func newScraper(body io.ReadCloser) *scraper {
+	return &scraper{body: body}
 }
 
-func (s *Scraper) Close() {
+func (s *scraper) close() {
 	s.body.Close()
 }
 
-func (s *Scraper) FetchLinks(startTag, class string, quantity int) ([]string, error) {
+func (s *scraper) fetchLinks(startTag, class string, quantity int) ([]string, error) {
 	tokens, err := s.fetchNextTokens(startTag, class, quantity, FETCH, html.StartTagToken)
 	if err != nil {
 		return nil, err
@@ -46,7 +96,7 @@ func (s *Scraper) FetchLinks(startTag, class string, quantity int) ([]string, er
 	return links, nil
 }
 
-func (s *Scraper) FetchText(startTag, class string, quantity int) ([]string, error) {
+func (s *scraper) fetchText(startTag, class string, quantity int) ([]string, error) {
 	tokens, err := s.fetchNextTokens(startTag, class, quantity, FETCH, html.TextToken)
 	if err != nil {
 		return nil, err
@@ -61,12 +111,12 @@ func (s *Scraper) FetchText(startTag, class string, quantity int) ([]string, err
 	return data, nil
 }
 
-func (s *Scraper) Advance(startTag, class string, quantity int) error {
+func (s *scraper) advance(startTag, class string, quantity int) error {
 	_, err := s.fetchNextTokens(startTag, class, quantity, ADVANCE, html.StartTagToken)
 	return err
 }
 
-func (s *Scraper) fetchNextTokens(
+func (s *scraper) fetchNextTokens(
 	startTag, class string,
 	quantity int,
 	action ActionType,
@@ -140,7 +190,7 @@ func (s *Scraper) fetchNextTokens(
 	return tokens, nil
 }
 
-func FetchHTML(URL string) (io.ReadCloser, error) {
+func fetchHTML(URL string) (io.ReadCloser, error) {
 	resp, err := http.Get(URL)
 	if err != nil {
 		return nil, err

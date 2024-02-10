@@ -1,8 +1,6 @@
 
 # tests
-flightradar_test.go
-jetphotos_test.go
-scraper_test.go
+tests/
 
 # coming soon
-planespotters/
+planespotters.go
