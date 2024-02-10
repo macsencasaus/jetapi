@@ -18,7 +18,7 @@ For example:
 ```
 http://localhost:8080/api?reg=g-xlea
 ```
-This will return information from both sites including images and prior flights!
+This will return information from both sites including images and prior flights for the aircraft with the registration `g-xlea`!
 
 ## More
 Works best with commercial airliners. GA aircraft may cause JSON encoding errors due to the variability in FlightRadar's page. Registrations not found also return JSON encoding errors.
