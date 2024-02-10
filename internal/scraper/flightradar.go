@@ -1,11 +1,9 @@
-package flightradar
+package scraper
 
 import (
 	"fmt"
 	"log"
 	"strings"
-
-	"github.com/macsencasaus/jetapi/scraper"
 )
 
 type flightInfo struct {
@@ -20,7 +18,7 @@ type flightInfo struct {
 	Status     string `json:"Status"`
 }
 
-type FlightRadar struct {
+type flightRadarInfo struct {
 	Aircraft     string        `json:"Aircraft"`
 	Airline      string        `json:"Airline"`
 	Operator     string        `json:"Operator"`
@@ -31,22 +29,22 @@ type FlightRadar struct {
 	Flights      []*flightInfo `json:"Flights"`
 }
 
-type FlightRadarRes struct {
-	Res *FlightRadar
+type flightRadarRes struct {
+	Res *flightRadarInfo
 	Err error
 }
 
-const HomeURL = "https://www.flightradar24.com/data/aircraft/"
+const frAircraftURL = "https://www.flightradar24.com/data/aircraft/"
 
-func GetFlightRadarStruct(reg string, done chan FlightRadarRes) {
-	URL := fmt.Sprintf("%s%s", HomeURL, reg)
-	b, err := scraper.FetchHTML(URL)
+func getFlightRadarStruct(reg string, done chan flightRadarRes) {
+	URL := fmt.Sprintf("%s%s", frAircraftURL, reg)
+	b, err := fetchHTML(URL)
 	if err != nil {
-		result := FlightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{Res: nil, Err: err}
 		done <- result
 		return
 	}
-	s := scraper.NewScraper(b)
+	s := newScraper(b)
 
 	var aircraft string
 	var airline string
@@ -57,31 +55,31 @@ func GetFlightRadarStruct(reg string, done chan FlightRadarRes) {
 	var modeS string
 	var flights []*flightInfo
 
-	aircraftArr, err := s.FetchText("span", "details", 1)
+	aircraftArr, err := s.fetchText("span", "details", 1)
 	if err != nil {
-		result := FlightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{Res: nil, Err: err}
 		done <- result
 		return
 	}
 	aircraft = strings.TrimSpace(aircraftArr[0])
 
-	err = s.Advance("span", "details", 1)
+	err = s.advance("span", "details", 1)
 	if err != nil {
-		result := FlightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{Res: nil, Err: err}
 		done <- result
 		return
 	}
-	airlineArr, err := s.FetchText("a", "", 1)
+	airlineArr, err := s.fetchText("a", "", 1)
 	if err != nil {
-		result := FlightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{Res: nil, Err: err}
 		done <- result
 		return
 	}
 	airline = strings.TrimSpace(airlineArr[0])
 
-	res, err := s.FetchText("span", "details", 5)
+	res, err := s.fetchText("span", "details", 5)
 	if err != nil {
-		result := FlightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{Res: nil, Err: err}
 		done <- result
 		return
 	}
@@ -91,7 +89,7 @@ func GetFlightRadarStruct(reg string, done chan FlightRadarRes) {
 	operatorCode = strings.TrimSpace(res[3])
 	modeS = strings.TrimSpace(res[4])
 
-	fr := &FlightRadar{
+	fr := &flightRadarInfo{
 		Aircraft:     aircraft,
 		Airline:      airline,
 		Operator:     operator,
@@ -102,10 +100,10 @@ func GetFlightRadarStruct(reg string, done chan FlightRadarRes) {
 		Flights:      flights,
 	}
 
-	err = s.Advance("td", "w40 hidden-xs hidden-sm", 3)
+	err = s.advance("td", "w40 hidden-xs hidden-sm", 3)
 	if err != nil {
 		log.Printf("flights: %v\n", err)
-		result := FlightRadarRes{Res: fr, Err: nil}
+		result := flightRadarRes{Res: fr, Err: nil}
 		done <- result
 		return
 	}
@@ -121,11 +119,11 @@ func GetFlightRadarStruct(reg string, done chan FlightRadarRes) {
 	}
 	fr.Flights = flights
 
-	result := FlightRadarRes{Res: fr, Err: nil}
+	result := flightRadarRes{Res: fr, Err: nil}
 	done <- result
 }
 
-func getFlight(s *scraper.Scraper) (*flightInfo, error) {
+func getFlight(s *scraper) (*flightInfo, error) {
 	var date string
 	var from string
 	var to string
@@ -136,31 +134,31 @@ func getFlight(s *scraper.Scraper) (*flightInfo, error) {
 	var sta string
 	var status string
 
-	dateArr, err := s.FetchText("td", "hidden-xs hidden-sm", 1)
+	dateArr, err := s.fetchText("td", "hidden-xs hidden-sm", 1)
 	if err != nil {
 		return nil, err
 	}
 	date = strings.TrimSpace(dateArr[0])
 
-	fromToArr, err := s.FetchText("td", "text-center-sm hidden-xs hidden-sm", 2)
+	fromToArr, err := s.fetchText("td", "text-center-sm hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
 	}
 	from = strings.TrimSpace(fromToArr[0])
 	to = strings.TrimSpace(fromToArr[1])
 
-	err = s.Advance("td", "hidden-xs hidden-sm", 1)
+	err = s.advance("td", "hidden-xs hidden-sm", 1)
 	if err != nil {
 		return nil, err
 	}
 
-	flightArr, err := s.FetchText("a", "fbold", 1)
+	flightArr, err := s.fetchText("a", "fbold", 1)
 	if err != nil {
 		return nil, err
 	}
 	flight = strings.TrimSpace(flightArr[0])
 
-	res, err := s.FetchText("td", "hidden-xs hidden-sm", 4)
+	res, err := s.fetchText("td", "hidden-xs hidden-sm", 4)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +167,7 @@ func getFlight(s *scraper.Scraper) (*flightInfo, error) {
 	atd = strings.TrimSpace(res[2])
 	sta = strings.TrimSpace(res[3])
 
-	statusArr, err := s.FetchText("td", "hidden-xs hidden-sm", 2)
+	statusArr, err := s.fetchText("td", "hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
 	}
