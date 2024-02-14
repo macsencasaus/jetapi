@@ -1,11 +1,39 @@
 package main
 
 import (
+	"html/template"
 	"net/http"
 	"regexp"
 
 	"github.com/macsencasaus/jetapi/internal/scraper"
 )
+
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/pages/home.tmpl",
+		"./ui/html/partial/nav.tmpl",
+		"./ui/html/partial/footer.tmpl",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.errorLog.Println(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = ts.ExecuteTemplate(w, "base", nil)
+	if err != nil {
+		app.errorLog.Println(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
 
 func (app *application) api(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

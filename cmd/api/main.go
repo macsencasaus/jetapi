@@ -25,6 +25,11 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	fileServer := http.FileServer(http.Dir("./ui/static"))
+	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+
+	mux.HandleFunc("/", app.home)
 	mux.HandleFunc("/api", app.api)
 
 	srv := &http.Server{
