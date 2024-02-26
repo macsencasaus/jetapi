@@ -1,7 +1,12 @@
 # jetapi
-A RESTful API to gather information from [JetPhotos](https://www.JetPhotos.com) and [FlightRadar24](https://www.FlightRadar24.com).
+[JetAPI](http://www.jetapi.xyz)
 
-## Getting Started
+An API to gather information from [JetPhotos](https://www.JetPhotos.com) and [FlightRadar24](https://www.FlightRadar24.com).
+
+## Documentation
+See the [documentation](http://www.jetapi.xyz/documentation) for query parameters.
+
+## Getting Started On Your Own
 Clone 
 ```
 git clone https://github.com/macsencasaus/jetapi.git
