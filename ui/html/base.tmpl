@@ -3,17 +3,14 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>{{template "title" .}} - Snippetbox</title>
+        <title>{{template "title" .}} - JetAPI</title>
         <link rel='stylesheet' href='/static/css/main.css'>
-        <link rel='shortcut icon' href='/static/img/favicon.ico' type='image/x-icon'>
+        <link rel='shortcut icon' href='/static/img/icon.ico' type='image/x-icon'>
         <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700'>
     </head>
     <body>
-        <header>
-            <h1><a href='/'>JetApi</a></h1>
-        </header>
         {{template "nav" .}}
-        <main>
+        <main id="main">
             {{template "main" .}}
         </main>
         {{template "footer" .}}

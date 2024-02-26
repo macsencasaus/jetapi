@@ -2,14 +2,16 @@ package main
 
 import (
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 )
 
 type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
+	errorLog      *log.Logger
+	infoLog       *log.Logger
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -19,26 +21,24 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		errorLog.Fatal(err)
 	}
 
-	mux := http.NewServeMux()
-
-	fileServer := http.FileServer(http.Dir("./ui/static"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/api", app.api)
+	app := &application{
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		templateCache: templateCache,
+	}
 
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
-		Handler:  mux,
+		Handler:  app.routes(),
 	}
 
 	app.infoLog.Printf("Starting server on %s", *addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }

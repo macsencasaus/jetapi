@@ -36,8 +36,8 @@ type flightRadarRes struct {
 
 const frAircraftURL = "https://www.flightradar24.com/data/aircraft/"
 
-func getFlightRadarStruct(reg string, done chan flightRadarRes) {
-	URL := fmt.Sprintf("%s%s", frAircraftURL, reg)
+func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
+	URL := fmt.Sprintf("%s%s", frAircraftURL, q.Reg)
 	b, err := fetchHTML(URL)
 	if err != nil {
 		result := flightRadarRes{Res: nil, Err: err}
@@ -108,7 +108,7 @@ func getFlightRadarStruct(reg string, done chan flightRadarRes) {
 		return
 	}
 
-	for {
+	for i := 0; i < q.Flights; i++ {
 		flight, err := getFlight(s)
 		if err != nil {
 			if err.Error() == "query not found" {

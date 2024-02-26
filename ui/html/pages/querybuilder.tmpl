@@ -1,0 +1,36 @@
+{{define "title"}}Query Builder{{end}}
+
+{{define "main"}}
+<h1>Query Builder</h1>
+
+<p class="qb_prompt">Interactively build a query for the API and get a look at the JSON!</p>
+
+<div class="query_builder">
+    <input type="text" class="reg_input" placeholder="Aircraft Registration" id="reg">
+</div>
+
+<div class="qb_result">
+    <div class="qb_url">
+        <div class="url_container">
+            <p class="padme" id="query_url"></p>
+        </div>
+        <button type="submit" class="copy" id="copy">
+            <img src="/static/img/copy.png">
+        </button>
+    </div>
+    <div class="qb_options">
+        <div>
+            <label for="photos_input">Photos: </label>
+            <input type="number" name="photos_input" id="photos_input" value="3">
+        </div>
+        <div>
+            <label>Flights: </label>
+            <input type="number" name="flights_input" id="flights_input" value="20">
+        </div>
+    </div>
+    <button type="submit" class="get" id="get">Get JSON</button>
+    <div id="json"></div>
+</div>
+<script src="/static/js/querybuilder.js" type="text/javascript"></script>
+{{end}}
+
