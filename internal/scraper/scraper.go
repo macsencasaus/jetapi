@@ -11,12 +11,31 @@ import (
 	"golang.org/x/net/html"
 )
 
-type jetInfo struct {
-	Jetphotos   *jetPhotosInfo
+type JetInfo struct {
+	JetPhotos   *jetPhotosInfo
 	FlightRadar *flightRadarInfo
 }
 
-func GetJSONData(reg string) ([]byte, error) {
+type Queries struct {
+	Reg     string
+	Photos  int
+	Flights int
+}
+
+func GetJSONData(q *Queries) ([]byte, error) {
+	ji, err := GetJetInfo(q)
+	if err != nil {
+		return nil, err
+	}
+	jsonData, err := json.Marshal(ji)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonData, nil
+}
+
+func GetJetInfo(q *Queries) (*JetInfo, error) {
 	donejp := make(chan jetPhotosRes)
 	donefr := make(chan flightRadarRes)
 
@@ -25,13 +44,13 @@ func GetJSONData(reg string) ([]byte, error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		getJetPhotosStruct(reg, donejp)
+		getJetPhotosStruct(q, donejp)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		getFlightRadarStruct(reg, donefr)
+		getFlightRadarStruct(q, donefr)
 	}()
 
 	go func() {
@@ -50,13 +69,8 @@ func GetJSONData(reg string) ([]byte, error) {
 		return nil, fr.Err
 	}
 
-	j := jetInfo{Jetphotos: jp.Res, FlightRadar: fr.Res}
-	jsonData, err := json.Marshal(j)
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonData, nil
+	j := &JetInfo{JetPhotos: jp.Res, FlightRadar: fr.Res}
+	return j, nil
 }
 
 type scraper struct {

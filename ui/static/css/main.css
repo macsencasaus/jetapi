@@ -1,0 +1,332 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    font-family: "Ubuntu Mono", monospace;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    line-height: 1.5;
+    background-color: #F1F3F6;
+}
+
+header, nav, footer {
+    padding: 2px calc((100% - 2000px) / 2) 0;
+}
+
+main {
+    padding: 2px calc((100% - 800px) / 2) 0;
+    margin-top: 54px;
+    margin-bottom: 54px;
+    min-height: calc(100vh - 230px);
+    overflow: auto;
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+h1 a {
+    font-size: 36px;
+    font-weight: bold;
+    background-image: url(/static/img/logo.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+    height: 40px;
+    padding-left: 110px;
+    position: relative;
+}
+
+h2 {
+    font-size: 22px;
+    margin-top: 22px;
+    position: relative;
+    /* top: -9px; */
+}
+
+a {
+    color: #34495E;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #4EB722;
+    text-decoration: none;
+} 
+
+header {
+    border-top: 5px solid #606c91;
+    border-bottom: 1px solid #E4E5E7;
+    overflow: auto;
+    padding-top: 27px;
+    padding-bottom: 27px;
+    text-align: center;
+}
+
+header a {
+    color: #34495E;
+    text-decoration: none;
+}
+
+nav {
+    border-bottom: 1px solid #E4E5E7;
+    padding-top: 17px;
+    padding-bottom: 15px;
+    background: #F7F9FA;
+    height: 60px;
+    color: #6A6C6F;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+footer {
+    border-top: 1px solid #E4E5E7;
+    padding-top: 17px;
+    padding-bottom: 15px;
+    background: #F7F9FA;
+    height: 60px;
+    color: #6A6C6F;
+    text-align: center;
+}
+
+.empty_line {
+    margin-bottom: 20px;
+}
+
+div.logo {
+    display: flex;
+    justify-content: center;
+}
+
+.logo img {
+    width: 30px;
+}
+
+.search input {
+    width: 400px;
+    height: 30px;
+    padding-left: 15px;
+    border: none;
+    outline: none;
+    color: none;
+    background-color: transparent;
+}
+
+.search button {
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.search img {
+    padding-right: 2px;
+    padding-top: 2px;
+    width: 15px;
+}
+
+::placeholder {
+    color: lightgrey;
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    height: 40px;
+    border-radius: 10px;
+    border: 0.2px solid lightgrey;
+}
+
+.query_builder {
+    width: 300px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid lightgrey;
+    display: flex;
+    align-content: center;
+}
+
+.message {
+    padding-top: 10px;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+input.reg_input {
+    padding-left: 10px;
+    width: 290px;
+    border: none;
+    outline: none;
+    color: none;
+    background-color: transparent;
+}
+
+div.qb_result {
+    padding-top: 50px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+p.qb_prompt {
+    margin-bottom: 10px;
+}
+
+div.qb_url {
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 700px;
+    height: 40px;
+    background-color: #2e2e2e;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+div.url_container {
+    width: 660px;
+}
+
+.padme {
+    padding-left: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+button.copy {
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+button.download {
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.copy img {
+    padding-top: 2px;
+    padding-right: 10px;
+    height: 23px;
+}
+
+.download img {
+    padding-top: 2px;
+    padding-right: 10px;
+    height: 25px;
+}
+
+.qb_options {
+    width: 50%;
+    display: flex;
+    justify-content: space-around;
+}
+
+.qb_options input {
+    width: 43px;
+}
+
+button.get {
+    margin-top: 30px;
+    height: 30px;
+    width: 100px;
+    background-color: white;
+    border-radius: 10px;
+    border: 0.2px solid lightgrey;
+    cursor: pointer;
+    margin-bottom: 30px;
+}
+
+
+div.json_output {
+    background-color: #2e2e2e;
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    justify-content: space-between; 
+}
+
+.json_options {
+    display: flex;
+    flex-direction: column;
+}
+
+.search_container {
+    display: flex;
+    justify-content: space-between;
+    max-width: 950px;
+}
+
+.aircraft_container {
+    display: flex; 
+    flex-direction: column;
+    width: 45%;
+}
+
+.info_container {
+    display: flex;
+    flex-direction: column;
+    width: 59%;
+}
+
+.aircraft_image img {
+    width: 300px;
+    display: flex; 
+    flex-direction: column;
+}
+
+.github {
+    width: 30px;
+}
+
+div.caption_container {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.author_date_caption {
+    display: flex;
+    justify-content: space-between;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+    font-weight: lighter;
+}
+
+
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+
+h1.reg {
+    border-bottom: 1px solid #aaaaaa;
+}
