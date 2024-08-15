@@ -1,12 +1,14 @@
 package scraper
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/net/html"
 )
@@ -205,16 +207,56 @@ func (s *scraper) fetchNextTokens(
 }
 
 func fetchHTML(URL string) (io.ReadCloser, error) {
-	resp, err := http.Get(URL)
+	tlsConfig := &tls.Config{
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		},
+		MinVersion:       tls.VersionTLS12,
+		MaxVersion:       tls.VersionTLS13,
+		CurvePreferences: []tls.CurveID{tls.CurveP256, tls.X25519},
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   10 * time.Second,
+	}
+
+	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("response error code: %v", resp.StatusCode)
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+	var resp *http.Response
+
+	// retry 3 times, sometimes it returns 403
+	for i := 0; i < 3; i++ {
+		resp, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			break
+		} else if i < 2 && resp.StatusCode == http.StatusForbidden {
+			continue
+		} else {
+			return nil, fmt.Errorf("response error code: %v, URL: %s", resp.StatusCode, URL)
+		}
 	}
+
 	ctype := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(ctype, "text/html") {
 		return nil, fmt.Errorf("content not type text/html")
 	}
+
 	return resp.Body, nil
 }
