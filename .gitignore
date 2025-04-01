@@ -3,3 +3,6 @@ tests/
 planespotters.go
 
 jetapi.xyz/
+
+api
+tmp/
