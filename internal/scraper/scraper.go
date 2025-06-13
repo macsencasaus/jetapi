@@ -95,8 +95,8 @@ func (s *scraper) close() {
 	s.body.Close()
 }
 
-func (s *scraper) fetchLinks(startTag, class string, quantity int) ([]string, error) {
-	tokens, err := s.fetchNextTokens(startTag, class, quantity, FETCH, html.StartTagToken)
+func (s *scraper) fetchLinks(startTag, class string, count int) ([]string, error) {
+	tokens, err := s.fetchNextTokens(startTag, class, count, FETCH, html.StartTagToken)
 	if err != nil {
 		return nil, err
 	}
@@ -112,30 +112,30 @@ func (s *scraper) fetchLinks(startTag, class string, quantity int) ([]string, er
 	return links, nil
 }
 
-func (s *scraper) fetchText(startTag, class string, quantity int) ([]string, error) {
-	tokens, err := s.fetchNextTokens(startTag, class, quantity, FETCH, html.TextToken)
+func (s *scraper) fetchText(startTag, class string, count int) ([]string, error) {
+	tokens, err := s.fetchNextTokens(startTag, class, count, FETCH, html.TextToken)
 	if err != nil {
 		return nil, err
 	}
-	if len(tokens) != quantity {
+	if len(tokens) != count {
 		return nil, s.Errorf("text not found with start tag %s, class %s, wanted %d, got %d",
-			startTag, class, quantity, len(tokens))
+			startTag, class, count, len(tokens))
 	}
 	data := make([]string, len(tokens))
-	for i := 0; i < quantity; i++ {
+	for i := 0; i < count; i++ {
 		data[i] = tokens[i].Data
 	}
 	return data, nil
 }
 
-func (s *scraper) advance(startTag, class string, quantity int) error {
-	_, err := s.fetchNextTokens(startTag, class, quantity, ADVANCE, html.StartTagToken)
+func (s *scraper) advance(startTag, class string, count int) error {
+	_, err := s.fetchNextTokens(startTag, class, count, ADVANCE, html.StartTagToken)
 	return err
 }
 
 func (s *scraper) fetchNextTokens(
 	startTag, class string,
-	quantity int,
+	count int,
 	action ActionType,
 	tt html.TokenType,
 ) ([]html.Token, error) {
@@ -144,7 +144,8 @@ func (s *scraper) fetchNextTokens(
 	}
 	var tokens []html.Token
 	atLeastOne := false
-	for {
+
+	for count > 0 {
 		tokenType := s.tokenizer.Next()
 		if tokenType == html.ErrorToken {
 			if s.tokenizer.Err() == io.EOF {
@@ -190,11 +191,9 @@ func (s *scraper) fetchNextTokens(
 			atLeastOne = true
 		}
 
-		quantity--
-		if quantity == 0 {
-			break
-		}
+		count--
 	}
+
 	return tokens, nil
 }
 
