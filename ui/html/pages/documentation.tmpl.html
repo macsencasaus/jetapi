@@ -1,6 +1,5 @@
-{{define "title"}}Documentation{{end}}
+{{define "title"}}Documentation{{end}} {{define "main"}}
 
-{{define "main"}}
 <h1>Documentation</h1>
 <h2>Request</h2>
 <p>Base URL: <a id="base-url" href="/"></a></p>
@@ -8,14 +7,14 @@
     document.getElementById("base-url").textContent = window.location.origin;
 </script>
 <table class="lighter">
-   <tr >
-       <th>API</th>
-       <th>API Method</th>
-   </tr> 
-   <tr>
-       <th>Photos and Flight Information</th>
-       <th>/api</th>
-   </tr>
+    <tr>
+        <th>API</th>
+        <th>API Method</th>
+    </tr>
+    <tr>
+        <th>Photos and Flight Information</th>
+        <th>/api</th>
+    </tr>
 </table>
 
 <h2>Request Parameters</h2>
@@ -37,7 +36,7 @@
             Number of Latest Photos
             <br />
             Default: 3
-            <br>
+            <br />
             Max: 20
         </th>
     </tr>
@@ -48,10 +47,14 @@
             Number of Latest Flights
             <br />
             Default: 20
-            <br>
+            <br />
             Max: 20
         </th>
     </tr>
 </table>
-<p class="message">See the <a href="/querybuilder">Query Builder</a> to interactively create a query.</p>
+<p class="message">
+    See the <a href="/querybuilder">Query Builder</a> to interactively create a
+    query.
+</p>
+
 {{end}}

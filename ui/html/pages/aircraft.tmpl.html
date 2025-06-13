@@ -1,26 +1,18 @@
-{{define "title"}}Aircraft Search{{end}}
-
-{{define "main"}}
+{{define "title"}}Aircraft Search{{end}} {{define "main"}}
 
 <div class="search_container">
     <div class="aircraft_image">
         {{ range .JetPhotos.Images }}
         <div class="aircraft_image">
             <a href="{{.Link}}" target="_blank">
-                <img src="{{.Thumbnail}}">
+                <img src="{{.Thumbnail}}" />
             </a>
             <div class="caption_container">
                 <div class="author_date_caption">
-                    <div>
-                        {{.Photographer}}
-                    </div>
-                    <div>
-                        {{.DateTaken}}
-                    </div>
+                    <div>{{.Photographer}}</div>
+                    <div>{{.DateTaken}}</div>
                 </div>
-                <div>
-                    {{.Location}}
-                </div>
+                <div>{{.Location}}</div>
             </div>
         </div>
         {{ end }}
@@ -57,6 +49,5 @@
         {{end}}
     </div>
 </div>
-
 
 {{end}}

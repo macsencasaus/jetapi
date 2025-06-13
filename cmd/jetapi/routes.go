@@ -28,7 +28,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
-	page := "home.tmpl"
+	page := "home.tmpl.html"
 	app.render(w, http.StatusOK, page, nil)
 }
 
@@ -62,7 +62,7 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) aircraftSearch(w http.ResponseWriter, r *http.Request) {
-	page := "aircraft.tmpl"
+	page := "aircraft.tmpl.html"
 	q, err := app.parseAPIQueries(w, r)
 	if err != nil {
 		app.notFoundPage(w)
@@ -78,16 +78,16 @@ func (app *application) aircraftSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) documentation(w http.ResponseWriter, r *http.Request) {
-	page := "documentation.tmpl"
+	page := "documentation.tmpl.html"
 	app.render(w, http.StatusOK, page, nil)
 }
 
 func (app *application) queryBuilder(w http.ResponseWriter, r *http.Request) {
-	page := "querybuilder.tmpl"
+	page := "querybuilder.tmpl.html"
 	app.render(w, http.StatusOK, page, nil)
 }
 
 func (app *application) notFoundPage(w http.ResponseWriter) {
-	page := "notfound.tmpl"
+	page := "notfound.tmpl.html"
 	app.render(w, http.StatusNotFound, page, nil)
 }
