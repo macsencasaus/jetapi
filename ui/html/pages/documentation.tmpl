@@ -3,7 +3,10 @@
 {{define "main"}}
 <h1>Documentation</h1>
 <h2>Request</h2>
-<p>Base URL: <a href="/">http://www.jetapi.xyz</a></p>
+<p>Base URL: <a id="base-url" href="/"></a></p>
+<script>
+    document.getElementById("base-url").textContent = window.location.origin;
+</script>
 <table class="lighter">
    <tr >
        <th>API</th>
@@ -31,8 +34,8 @@
         <th>photos</th>
         <th>Optional</th>
         <th>
-            Latest Photos
-            <br>
+            Number of Latest Photos
+            <br />
             Default: 3
             <br>
             Max: 20
@@ -42,13 +45,13 @@
         <th>flights</th>
         <th>Optional</th>
         <th>
-            Latest Flights
-            <br>
+            Number of Latest Flights
+            <br />
             Default: 20
             <br>
             Max: 20
         </th>
     </tr>
 </table>
-<p class="message">See the <a href="/querybuilder">Query Builder</a> to interactively create a query for the API.</p>
+<p class="message">See the <a href="/querybuilder">Query Builder</a> to interactively create a query.</p>
 {{end}}
