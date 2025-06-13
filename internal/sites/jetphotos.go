@@ -13,30 +13,26 @@ type JetPhotosResult struct {
 }
 
 type ImageAttributes struct {
-	Image        string              `json:"Image"`
-	Link         string              `json:"Link"`
-	Thumbnail    string              `json:"Thumbnail"`
-	DateTaken    string              `json:"DateTaken"`
-	DateUploaded string              `json:"DateUploaded"`
-	Location     string              `json:"Location"`
-	Photographer string              `json:"Photographer"`
-	Aircraft     *AircraftAttributes `json:"Aircraft"`
-}
-
-type AircraftAttributes struct {
-	Aircraft string `json:"Aircraft"`
-	Serial   string `json:"Serial"`
-	Airline  string `json:"Airline"`
+	Image        string `json:"Image"`
+	Link         string `json:"Link"`
+	Thumbnail    string `json:"Thumbnail"`
+	DateTaken    string `json:"DateTaken"`
+	DateUploaded string `json:"DateUploaded"`
+	Location     string `json:"Location"`
+	Photographer string `json:"Photographer"`
+	Aircraft     string `json:"Aircraft"`
+	Serial       string `json:"Serial"`
+	Airline      string `json:"Airline"`
 }
 
 const jpHomeURL = "https://www.jetphotos.com"
 
 func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
+	reg := q.Reg
 	if q.Photos == 0 {
-		return &JetPhotosResult{Reg: strings.ToUpper(q.Reg)}, nil
+		return &JetPhotosResult{Reg: strings.ToUpper(reg)}, nil
 	}
 
-	reg := q.Reg
 	URL := fmt.Sprintf("%s/photo/keyword/%s", jpHomeURL, reg)
 	b, err := scraper.FetchHTML(URL)
 	if err != nil {
@@ -70,7 +66,6 @@ func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 
 	imgs := len(pageLinks)
 
-	var registration string
 	images := make([]ImageAttributes, imgs)
 
 	for i, link := range pageLinks {
@@ -93,26 +88,23 @@ func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 		}
 		images[i].Image = photoLinkArr[0]
 
-		// registration
+		// registration + dates
 		res, err := s.ScrapeText("h4", "headerText4 color-shark", 3)
 		if err != nil {
 			return nil, jpError("scraping registrating text", reg, URL, err)
 		}
-		registration = res[0]
 		images[i].DateTaken = res[1]
 		images[i].DateUploaded = res[2]
 
 		// aircraft
 		s.Advance("h2", "header-reset", 1)
-		aircraft := &AircraftAttributes{}
 		res, err = s.ScrapeText("a", "link", 3)
 		if err != nil {
 			return nil, jpError("scraping aircraft text", reg, URL, err)
 		}
-		aircraft.Aircraft = res[0]
-		aircraft.Airline = res[1]
-		aircraft.Serial = strings.TrimSpace(res[2])
-		images[i].Aircraft = aircraft
+		images[i].Aircraft = res[0]
+		images[i].Airline = res[1]
+		images[i].Serial = strings.TrimSpace(res[2])
 
 		// location
 		s.Advance("h5", "header-reset", 1)
@@ -132,7 +124,7 @@ func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 
 	result := &JetPhotosResult{
 		Images: images,
-		Reg:    registration,
+		Reg:    strings.ToUpper(reg),
 	}
 
 	return result, nil
