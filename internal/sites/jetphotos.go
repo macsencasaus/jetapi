@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"context"
 	"github.com/macsencasaus/jetapi/internal/scraper"
+	"golang.org/x/sync/errgroup"
 )
 
 type JetPhotosResult struct {
@@ -64,18 +66,16 @@ func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 		thumbnails = append(thumbnails, thumbnail[0])
 	}
 
-	imgs := len(pageLinks)
+	images := make([]ImageAttributes, len(pageLinks))
 
-	images := make([]ImageAttributes, imgs)
-
-	for i, link := range pageLinks {
+	pageScraper := func(i int, link string) error {
 		photoURL := fmt.Sprintf("%s%s", jpHomeURL, link)
 		images[i].Link = photoURL
 		images[i].Thumbnail = "https:" + thumbnails[i]
 
 		b, err := scraper.FetchHTML(photoURL)
 		if err != nil {
-			return nil, jpError("fetching HTML page", reg, URL, err)
+			return jpError("fetching HTML page", reg, URL, err)
 		}
 
 		s := scraper.NewScraper(b)
@@ -84,14 +84,14 @@ func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 		// photo links
 		photoLinkArr, err := s.ScrapeLinks("img", "large-photo__img", 1)
 		if err != nil {
-			return nil, jpError("scraping photo links", reg, URL, err)
+			return jpError("scraping photo links", reg, URL, err)
 		}
 		images[i].Image = photoLinkArr[0]
 
 		// registration + dates
 		res, err := s.ScrapeText("h4", "headerText4 color-shark", 3)
 		if err != nil {
-			return nil, jpError("scraping registrating text", reg, URL, err)
+			return jpError("scraping registrating text", reg, URL, err)
 		}
 		images[i].DateTaken = res[1]
 		images[i].DateUploaded = res[2]
@@ -100,7 +100,7 @@ func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 		s.Advance("h2", "header-reset", 1)
 		res, err = s.ScrapeText("a", "link", 3)
 		if err != nil {
-			return nil, jpError("scraping aircraft text", reg, URL, err)
+			return jpError("scraping aircraft text", reg, URL, err)
 		}
 		images[i].Aircraft = res[0]
 		images[i].Airline = res[1]
@@ -110,16 +110,30 @@ func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 		s.Advance("h5", "header-reset", 1)
 		location, err := s.ScrapeText("a", "link", 1)
 		if err != nil {
-			return nil, jpError("scraping location text", reg, URL, err)
+			return jpError("scraping location text", reg, URL, err)
 		}
 		images[i].Location = location[0]
 
 		// photographer
 		photographer, err := s.ScrapeText("h6", "header-reset", 1)
 		if err != nil {
-			return nil, jpError("scraping photographer text", reg, URL, err)
+			return jpError("scraping photographer text", reg, URL, err)
 		}
 		images[i].Photographer = photographer[0]
+
+		return nil
+	}
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	for i, link := range pageLinks {
+		g.Go(func() error {
+			return pageScraper(i, link)
+		})
+	}
+
+	if err = g.Wait(); err != nil {
+		return nil, err
 	}
 
 	result := &JetPhotosResult{
