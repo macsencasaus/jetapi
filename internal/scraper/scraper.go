@@ -143,7 +143,6 @@ func (s *scraper) fetchNextTokens(
 		s.tokenizer = html.NewTokenizer(s.body)
 	}
 	var tokens []html.Token
-	initQuant := quantity
 	atLeastOne := false
 	for {
 		tokenType := s.tokenizer.Next()
@@ -195,14 +194,6 @@ func (s *scraper) fetchNextTokens(
 		if quantity == 0 {
 			break
 		}
-	}
-	if initQuant < 0 {
-		lastTokens := make([]html.Token, -initQuant)
-		ttsize := len(tokens)
-		for i := ttsize + initQuant; i < ttsize; i++ {
-			lastTokens[i-ttsize-initQuant] = tokens[i]
-		}
-		return lastTokens, nil
 	}
 	return tokens, nil
 }
