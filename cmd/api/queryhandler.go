@@ -10,10 +10,10 @@ import (
 	"github.com/macsencasaus/jetapi/internal/sites"
 )
 
-func (app *application) handleQueries(
+func (app *application) parseAPIQueries(
 	w http.ResponseWriter,
 	r *http.Request,
-) (*sites.Queries, error) {
+) (*sites.APIQueries, error) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
 		return nil, fmt.Errorf("%d", http.StatusMethodNotAllowed)
@@ -47,7 +47,7 @@ func (app *application) handleQueries(
 		flights = 20
 	}
 
-	q := &sites.Queries{Reg: reg, Photos: photos, Flights: flights}
+	q := &sites.APIQueries{Reg: reg, Photos: photos, Flights: flights}
 	return q, nil
 }
 

@@ -7,7 +7,18 @@ import (
 	"github.com/macsencasaus/jetapi/internal/scraper"
 )
 
-type flightInfo struct {
+type FlightRadarResult struct {
+	Aircraft     string              `json:"Aircraft"`
+	Airline      string              `json:"Airline"`
+	Operator     string              `json:"Operator"`
+	TypeCode     string              `json:"TypeCode"`
+	AirlineCode  string              `json:"AirlineCode"`
+	OperatorCode string              `json:"OperatorCode"`
+	ModeS        string              `json:"ModeS"`
+	Flights      []*FlightAttributes `json:"Flights"`
+}
+
+type FlightAttributes struct {
 	Date       string `json:"Date"`
 	From       string `json:"From"`
 	To         string `json:"To"`
@@ -19,89 +30,49 @@ type flightInfo struct {
 	Status     string `json:"Status"`
 }
 
-type flightRadarInfo struct {
-	Aircraft     string        `json:"Aircraft"`
-	Airline      string        `json:"Airline"`
-	Operator     string        `json:"Operator"`
-	TypeCode     string        `json:"TypeCode"`
-	AirlineCode  string        `json:"AirlineCode"`
-	OperatorCode string        `json:"OperatorCode"`
-	ModeS        string        `json:"ModeS"`
-	Flights      []*flightInfo `json:"Flights"`
-}
-
-type flightRadarResult struct {
-	Res *flightRadarInfo
-	Err error
-}
-
 const frAircraftURL = "https://www.flightradar24.com/data/aircraft/"
 
-func getFlightRadarStruct(q *Queries) flightRadarResult {
+func scrapeFlightRadar(q *APIQueries) (*FlightRadarResult, error) {
 	reg := q.Reg
 	URL := fmt.Sprintf("%s%s", frAircraftURL, reg)
 	b, err := scraper.FetchHTML(URL)
 	if err != nil {
-		return flightRadarResult{
-			Res: nil,
-			Err: frError("fetching fr page", reg, URL, err),
-		}
+		return nil, frError("fetching fr page", reg, URL, err)
 	}
 
 	s := scraper.NewScraper(b)
 	defer s.Close()
 
-	var aircraft string
-	var airline string
-	var operator string
-	var typeCode string
-	var airlineCode string
-	var operatorCode string
-	var modeS string
-	var flights []*flightInfo
-
 	// aircraft
 	aircraftArr, err := s.ScrapeText("span", "details", 1)
 	if err != nil {
-		return flightRadarResult{
-			Res: nil,
-			Err: frError("scraping aircraft text", reg, URL, err),
-		}
+		return nil, frError("scraping aircraft text", reg, URL, err)
 	}
-	aircraft = strings.TrimSpace(aircraftArr[0])
+	aircraft := strings.TrimSpace(aircraftArr[0])
 
 	// airline
 	err = s.Advance("span", "details", 1)
 	if err != nil {
-		return flightRadarResult{
-			Res: nil,
-			Err: frError("advancing to airline text", reg, URL, err),
-		}
+		return nil, frError("advancing to airline text", reg, URL, err)
 	}
 	airlineArr, err := s.ScrapeText("a", "", 1)
 	if err != nil {
-		return flightRadarResult{
-			Res: nil,
-			Err: frError("scraping airline text", reg, URL, err),
-		}
+		return nil, frError("scraping airline text", reg, URL, err)
 	}
-	airline = strings.TrimSpace(airlineArr[0])
+	airline := strings.TrimSpace(airlineArr[0])
 
 	// details
 	res, err := s.ScrapeText("span", "details", 5)
 	if err != nil {
-		return flightRadarResult{
-			Res: nil,
-			Err: frError("scraping details", reg, URL, err),
-		}
+		return nil, frError("scraping details", reg, URL, err)
 	}
-	operator = strings.TrimSpace(res[0])
-	typeCode = strings.TrimSpace(res[1])
-	airlineCode = strings.TrimSpace(res[2])
-	operatorCode = strings.TrimSpace(res[3])
-	modeS = strings.TrimSpace(res[4])
+	operator := strings.TrimSpace(res[0])
+	typeCode := strings.TrimSpace(res[1])
+	airlineCode := strings.TrimSpace(res[2])
+	operatorCode := strings.TrimSpace(res[3])
+	modeS := strings.TrimSpace(res[4])
 
-	fr := &flightRadarInfo{
+	response := &FlightRadarResult{
 		Aircraft:     aircraft,
 		Airline:      airline,
 		Operator:     operator,
@@ -109,55 +80,42 @@ func getFlightRadarStruct(q *Queries) flightRadarResult {
 		AirlineCode:  airlineCode,
 		OperatorCode: operatorCode,
 		ModeS:        modeS,
-		Flights:      flights,
+		Flights:      []*FlightAttributes{},
 	}
 
 	// flights
 	err = s.Advance("td", "w40 hidden-xs hidden-sm", 3)
 	if err != nil {
-		return flightRadarResult{
-			Res: fr,
-			Err: frError("advancing to flights", reg, URL, err),
-		}
+		// doesn't find any flights
+		return response, nil
 	}
 
 	for i := 0; i < q.Flights; i++ {
-		flight, err := getFlight(s)
+		flight, err := scrapeFlight(s)
 		if err != nil {
 			break
 		}
-		flights = append(flights, flight)
+		response.Flights = append(response.Flights, flight)
 	}
-	fr.Flights = flights
 
-	return flightRadarResult{Res: fr, Err: nil}
+	return response, nil
 }
 
-func getFlight(s *scraper.Scraper) (*flightInfo, error) {
-	var date string
-	var from string
-	var to string
-	var flight string
-	var flightTime string
-	var std string
-	var atd string
-	var sta string
-	var status string
-
+func scrapeFlight(s *scraper.Scraper) (*FlightAttributes, error) {
 	// date
 	dateArr, err := s.ScrapeText("td", "hidden-xs hidden-sm", 1)
 	if err != nil {
 		return nil, err
 	}
-	date = strings.TrimSpace(dateArr[0])
+	date := strings.TrimSpace(dateArr[0])
 
 	// from & to
 	fromToArr, err := s.ScrapeText("td", "text-center-sm hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
 	}
-	from = strings.TrimSpace(fromToArr[0])
-	to = strings.TrimSpace(fromToArr[1])
+	from := strings.TrimSpace(fromToArr[0])
+	to := strings.TrimSpace(fromToArr[1])
 
 	err = s.Advance("td", "hidden-xs hidden-sm", 1)
 	if err != nil {
@@ -169,26 +127,26 @@ func getFlight(s *scraper.Scraper) (*flightInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	flight = strings.TrimSpace(flightArr[0])
+	flight := strings.TrimSpace(flightArr[0])
 
 	// time details
 	res, err := s.ScrapeText("td", "hidden-xs hidden-sm", 4)
 	if err != nil {
 		return nil, err
 	}
-	flightTime = strings.TrimSpace(res[0])
-	std = strings.TrimSpace(res[1])
-	atd = strings.TrimSpace(res[2])
-	sta = strings.TrimSpace(res[3])
+	flightTime := strings.TrimSpace(res[0])
+	std := strings.TrimSpace(res[1])
+	atd := strings.TrimSpace(res[2])
+	sta := strings.TrimSpace(res[3])
 
 	// status
 	statusArr, err := s.ScrapeText("td", "hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
 	}
-	status = strings.TrimSpace(statusArr[1])
+	status := strings.TrimSpace(statusArr[1])
 
-	f := &flightInfo{
+	f := &FlightAttributes{
 		Date:       date,
 		From:       from,
 		To:         to,
@@ -203,5 +161,5 @@ func getFlight(s *scraper.Scraper) (*flightInfo, error) {
 }
 
 func frError(msg, reg, URL string, err error) error {
-	return fmt.Errorf("Error %s for %s at %s: %s", msg, reg, URL, err.Error())
+	return fmt.Errorf("Error %s for %s at %s: %v", msg, reg, URL, err)
 }

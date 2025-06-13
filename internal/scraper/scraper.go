@@ -90,7 +90,7 @@ func (s *Scraper) scrapeNextTokens(
 				}
 				return nil, s.Errorf("unexpected EOF")
 			}
-			return nil, s.Errorf("error tokenizing html %s", s.tokenizer.Err().Error())
+			return nil, s.Errorf("Error tokenizing html: %v", s.tokenizer.Err())
 		}
 
 		if tokenType != html.StartTagToken {
@@ -161,7 +161,7 @@ func FetchHTML(URL string) (io.ReadCloser, error) {
 
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating request: %s", err.Error())
+		return nil, fmt.Errorf("Error creating request: %v", err)
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
@@ -172,7 +172,7 @@ func FetchHTML(URL string) (io.ReadCloser, error) {
 	for i := 0; i < 3; i++ {
 		resp, err = client.Do(req)
 		if err != nil {
-			return nil, fmt.Errorf("Error sending request: %s", err.Error())
+			return nil, fmt.Errorf("Error sending request: %v", err)
 		}
 
 		if resp.StatusCode == http.StatusOK {
@@ -180,7 +180,7 @@ func FetchHTML(URL string) (io.ReadCloser, error) {
 		} else if i < 2 && resp.StatusCode == http.StatusForbidden {
 			continue
 		} else {
-			return nil, fmt.Errorf("response error code: %v, URL: %s", resp.StatusCode, URL)
+			return nil, fmt.Errorf("response error code: %d, URL: %s", resp.StatusCode, URL)
 		}
 	}
 

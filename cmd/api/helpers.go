@@ -9,7 +9,7 @@ import (
 )
 
 func (app *application) serverError(w http.ResponseWriter, err error) {
-	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
+	trace := fmt.Sprintf("%v\n%s", err, debug.Stack())
 	app.errorLog.Println(trace)
 	status := http.StatusInternalServerError
 	http.Error(w, http.StatusText(status), status)
@@ -31,7 +31,7 @@ func (app *application) render(
 	w http.ResponseWriter,
 	status int,
 	page string,
-	data *sites.JetInfo,
+	data *sites.ScrapeResult,
 ) {
 	ts, ok := app.templateCache[page]
 	if !ok {

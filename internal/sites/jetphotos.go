@@ -7,48 +7,40 @@ import (
 	"github.com/macsencasaus/jetapi/internal/scraper"
 )
 
-type jetPhotosInfo struct {
-	Reg    string         `json:"Reg"`
-	Images []imagesStruct `json:"Images"`
+type JetPhotosResult struct {
+	Reg    string            `json:"Reg"`
+	Images []ImageAttributes `json:"Images"`
 }
 
-type imagesStruct struct {
-	Image        string          `json:"Image"`
-	Link         string          `json:"Link"`
-	Thumbnail    string          `json:"Thumbnail"`
-	DateTaken    string          `json:"DateTaken"`
-	DateUploaded string          `json:"DateUploaded"`
-	Location     string          `json:"Location"`
-	Photographer string          `json:"Photographer"`
-	Aircraft     *aircraftStruct `json:"Aircraft"`
+type ImageAttributes struct {
+	Image        string              `json:"Image"`
+	Link         string              `json:"Link"`
+	Thumbnail    string              `json:"Thumbnail"`
+	DateTaken    string              `json:"DateTaken"`
+	DateUploaded string              `json:"DateUploaded"`
+	Location     string              `json:"Location"`
+	Photographer string              `json:"Photographer"`
+	Aircraft     *AircraftAttributes `json:"Aircraft"`
 }
 
-type aircraftStruct struct {
+type AircraftAttributes struct {
 	Aircraft string `json:"Aircraft"`
 	Serial   string `json:"Serial"`
 	Airline  string `json:"Airline"`
 }
 
-type jetPhotosResult struct {
-	Res *jetPhotosInfo
-	Err error
-}
-
 const jpHomeURL = "https://www.jetphotos.com"
 
-func getJetPhotosStruct(q *Queries) jetPhotosResult {
+func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 	if q.Photos == 0 {
-		return jetPhotosResult{Res: &jetPhotosInfo{Reg: strings.ToUpper(q.Reg)}}
+		return &JetPhotosResult{Reg: strings.ToUpper(q.Reg)}, nil
 	}
 
 	reg := q.Reg
 	URL := fmt.Sprintf("%s/photo/keyword/%s", jpHomeURL, reg)
 	b, err := scraper.FetchHTML(URL)
 	if err != nil {
-		return jetPhotosResult{
-			Res: nil,
-			Err: jpError("scraping search URL", reg, URL, err),
-		}
+		return nil, jpError("scraping search URL", reg, URL, err)
 	}
 
 	s := scraper.NewScraper(b)
@@ -62,10 +54,7 @@ func getJetPhotosStruct(q *Queries) jetPhotosResult {
 			if len(pageLinks) > 0 {
 				break
 			}
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("scraping aircraft pagelinks", reg, URL, err),
-			}
+			return nil, jpError("scraping aircraft pagelinks", reg, URL, err)
 		}
 
 		thumbnail, err := s.ScrapeLinks("img", "result__photo", 1)
@@ -73,10 +62,7 @@ func getJetPhotosStruct(q *Queries) jetPhotosResult {
 			if len(thumbnails) > 0 {
 				break
 			}
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("scraping aircraft thumbnails", reg, URL, err),
-			}
+			return nil, jpError("scraping aircraft thumbnails", reg, URL, err)
 		}
 		pageLinks = append(pageLinks, pageLink[0])
 		thumbnails = append(thumbnails, thumbnail[0])
@@ -85,7 +71,7 @@ func getJetPhotosStruct(q *Queries) jetPhotosResult {
 	imgs := len(pageLinks)
 
 	var registration string
-	images := make([]imagesStruct, imgs)
+	images := make([]ImageAttributes, imgs)
 
 	for i, link := range pageLinks {
 		photoURL := fmt.Sprintf("%s%s", jpHomeURL, link)
@@ -94,10 +80,7 @@ func getJetPhotosStruct(q *Queries) jetPhotosResult {
 
 		b, err := scraper.FetchHTML(photoURL)
 		if err != nil {
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("fetching HTML page", reg, URL, err),
-			}
+			return nil, jpError("fetching HTML page", reg, URL, err)
 		}
 
 		s := scraper.NewScraper(b)
@@ -106,20 +89,14 @@ func getJetPhotosStruct(q *Queries) jetPhotosResult {
 		// photo links
 		photoLinkArr, err := s.ScrapeLinks("img", "large-photo__img", 1)
 		if err != nil {
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("scraping photo links", reg, URL, err),
-			}
+			return nil, jpError("scraping photo links", reg, URL, err)
 		}
 		images[i].Image = photoLinkArr[0]
 
 		// registration
 		res, err := s.ScrapeText("h4", "headerText4 color-shark", 3)
 		if err != nil {
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("scraping registrating text", reg, URL, err),
-			}
+			return nil, jpError("scraping registrating text", reg, URL, err)
 		}
 		registration = res[0]
 		images[i].DateTaken = res[1]
@@ -127,13 +104,10 @@ func getJetPhotosStruct(q *Queries) jetPhotosResult {
 
 		// aircraft
 		s.Advance("h2", "header-reset", 1)
-		aircraft := &aircraftStruct{}
+		aircraft := &AircraftAttributes{}
 		res, err = s.ScrapeText("a", "link", 3)
 		if err != nil {
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("scraping aircraft text", reg, URL, err),
-			}
+			return nil, jpError("scraping aircraft text", reg, URL, err)
 		}
 		aircraft.Aircraft = res[0]
 		aircraft.Airline = res[1]
@@ -144,32 +118,26 @@ func getJetPhotosStruct(q *Queries) jetPhotosResult {
 		s.Advance("h5", "header-reset", 1)
 		location, err := s.ScrapeText("a", "link", 1)
 		if err != nil {
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("scraping location text", reg, URL, err),
-			}
+			return nil, jpError("scraping location text", reg, URL, err)
 		}
 		images[i].Location = location[0]
 
 		// photographer
 		photographer, err := s.ScrapeText("h6", "header-reset", 1)
 		if err != nil {
-			return jetPhotosResult{
-				Res: nil,
-				Err: jpError("scraping photographer text", reg, URL, err),
-			}
+			return nil, jpError("scraping photographer text", reg, URL, err)
 		}
 		images[i].Photographer = photographer[0]
 	}
 
-	jpInfo := &jetPhotosInfo{
+	result := &JetPhotosResult{
 		Images: images,
 		Reg:    registration,
 	}
 
-	return jetPhotosResult{Res: jpInfo, Err: nil}
+	return result, nil
 }
 
 func jpError(msg, reg, url string, err error) error {
-	return fmt.Errorf("Error %s for %s at %s: %s", msg, reg, url, err.Error())
+	return fmt.Errorf("Error %s for %s at %s: %v", msg, reg, url, err)
 }

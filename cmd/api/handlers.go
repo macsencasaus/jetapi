@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/macsencasaus/jetapi/internal/sites"
@@ -17,13 +19,13 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) aircraftSearch(w http.ResponseWriter, r *http.Request) {
 	page := "aircraft.tmpl"
-	q, err := app.handleQueries(w, r)
+	q, err := app.parseAPIQueries(w, r)
 	if err != nil {
 		app.notFoundPage(w)
 		return
 	}
-	q = &sites.Queries{Reg: q.Reg, Photos: 3, Flights: 8}
-	ji, err := sites.GetJetInfo(q)
+	q = &sites.APIQueries{Reg: q.Reg, Photos: 3, Flights: 8}
+	ji, err := sites.Scrape(q)
 	if err != nil {
 		app.notFoundPage(w)
 		return
@@ -53,19 +55,24 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	q, err := app.handleQueries(w, r)
+	q, err := app.parseAPIQueries(w, r)
 	if err != nil {
 		app.badRequest(w)
 		return
 	}
 
-	jsonData, err := sites.GetJSONData(q)
+	sr, err := sites.Scrape(q)
 	if err != nil {
 		app.serverError(w, err)
-		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	jsonResult, err := json.Marshal(sr)
+	if err != nil {
+		app.serverError(w, fmt.Errorf("Error encoding json: %v", err))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonData)
+	w.Write(jsonResult)
 }
