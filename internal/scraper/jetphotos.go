@@ -41,10 +41,14 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		return
 	}
 
-	URL := fmt.Sprintf("%s/photo/keyword/%s", jpHomeURL, q.Reg)
+	reg := q.Reg
+	URL := fmt.Sprintf("%s/photo/keyword/%s", jpHomeURL, reg)
 	b, err := fetchHTML(URL)
 	if err != nil {
-		result := jetPhotosRes{Res: nil, Err: err}
+		result := jetPhotosRes{
+			Res: nil,
+			Err: jpError("scraping search URL", reg, URL, err),
+		}
 		done <- result
 		return
 	}
@@ -52,21 +56,34 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 	s := newScraper(b)
 	pageLinks := []string{}
 	thumbnails := []string{}
-	atLeastOne := false
 	for i := 0; i < q.Photos; i++ {
-		pageLink, err1 := s.fetchLinks("a", "result__photoLink", 1)
-		thumbnail, err2 := s.fetchLinks("img", "result__photo", 1)
-		if err1 != nil || err2 != nil {
-			if atLeastOne {
+		pageLink, err := s.fetchLinks("a", "result__photoLink", 1)
+		if err != nil {
+			if len(pageLinks) > 0 {
 				break
 			}
-			result := jetPhotosRes{Res: nil, Err: err}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("scraping aircraft pagelinks", reg, URL, err),
+			}
+			done <- result
+			return
+		}
+
+		thumbnail, err := s.fetchLinks("img", "result__photo", 1)
+		if err != nil {
+			if len(thumbnails) > 0 {
+				break
+			}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("scraping aircraft thumbnails", reg, URL, err),
+			}
 			done <- result
 			return
 		}
 		pageLinks = append(pageLinks, pageLink[0])
 		thumbnails = append(thumbnails, thumbnail[0])
-		atLeastOne = true
 	}
 	s.close()
 
@@ -82,7 +99,10 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 
 		b, err := fetchHTML(photoURL)
 		if err != nil {
-			result := jetPhotosRes{Res: nil, Err: err}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("fetching HTML page", reg, URL, err),
+			}
 			done <- result
 			return
 		}
@@ -92,7 +112,10 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		// photo links
 		photoLinkArr, err := s.fetchLinks("img", "large-photo__img", 1)
 		if err != nil {
-			result := jetPhotosRes{Res: nil, Err: err}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("scraping photo links", reg, URL, err),
+			}
 			done <- result
 			return
 		}
@@ -101,7 +124,10 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		// registration
 		res, err := s.fetchText("h4", "headerText4 color-shark", 3)
 		if err != nil {
-			result := jetPhotosRes{Res: nil, Err: err}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("scraping registrating text", reg, URL, err),
+			}
 			done <- result
 			return
 		}
@@ -109,12 +135,15 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		images[i].DateTaken = res[1]
 		images[i].DateUploaded = res[2]
 
+		// aircraft
 		s.advance("h2", "header-reset", 1)
-
 		aircraft := &aircraftStruct{}
 		res, err = s.fetchText("a", "link", 3)
 		if err != nil {
-			result := jetPhotosRes{Res: nil, Err: err}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("scraping aircraft text", reg, URL, err),
+			}
 			done <- result
 			return
 		}
@@ -127,7 +156,10 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		s.advance("h5", "header-reset", 1)
 		location, err := s.fetchText("a", "link", 1)
 		if err != nil {
-			result := jetPhotosRes{Res: nil, Err: err}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("scraping location text", reg, URL, err),
+			}
 			done <- result
 			return
 		}
@@ -136,7 +168,10 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		// photographer
 		photographer, err := s.fetchText("h6", "header-reset", 1)
 		if err != nil {
-			result := jetPhotosRes{Res: nil, Err: err}
+			result := jetPhotosRes{
+				Res: nil,
+				Err: jpError("scraping photographer text", reg, URL, err),
+			}
 			done <- result
 			return
 		}
@@ -152,4 +187,8 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 
 	result := jetPhotosRes{Res: j, Err: nil}
 	done <- result
+}
+
+func jpError(msg, reg, url string, err error) error {
+	return fmt.Errorf("Error %s for %s at %s: %s", msg, reg, url, err.Error())
 }
