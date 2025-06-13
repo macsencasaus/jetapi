@@ -36,31 +36,31 @@ func GetJSONData(q *Queries) ([]byte, error) {
 }
 
 func GetJetInfo(q *Queries) (*JetInfo, error) {
-	donejp := make(chan jetPhotosResult)
-	donefr := make(chan flightRadarResult)
+	jpCh := make(chan jetPhotosResult)
+	frCh := make(chan flightRadarResult)
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
+	wg.Add(2)
+
 	go func() {
 		defer wg.Done()
-		getJetPhotosStruct(q, donejp)
+		jpCh <- getJetPhotosStruct(q)
 	}()
 
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		getFlightRadarStruct(q, donefr)
+		frCh <- getFlightRadarStruct(q)
 	}()
 
-    go func() {
-        wg.Wait()
-        close(donejp)
-        close(donefr)
-    }()
+	go func() {
+		wg.Wait()
+		close(jpCh)
+		close(frCh)
+	}()
 
-	jp := <-donejp
-	fr := <-donefr
+	jp := <-jpCh
+	fr := <-frCh
 
 	if jp.Err != nil {
 		return nil, jp.Err

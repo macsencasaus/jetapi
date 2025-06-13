@@ -37,17 +37,15 @@ type flightRadarResult struct {
 
 const frAircraftURL = "https://www.flightradar24.com/data/aircraft/"
 
-func getFlightRadarStruct(q *Queries, done chan flightRadarResult) {
+func getFlightRadarStruct(q *Queries) flightRadarResult {
 	reg := q.Reg
 	URL := fmt.Sprintf("%s%s", frAircraftURL, reg)
 	b, err := scraper.FetchHTML(URL)
 	if err != nil {
-		result := flightRadarResult{
+		return flightRadarResult{
 			Res: nil,
 			Err: frError("fetching fr page", reg, URL, err),
 		}
-		done <- result
-		return
 	}
 
 	s := scraper.NewScraper(b)
@@ -65,45 +63,37 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarResult) {
 	// aircraft
 	aircraftArr, err := s.ScrapeText("span", "details", 1)
 	if err != nil {
-		result := flightRadarResult{
+		return flightRadarResult{
 			Res: nil,
 			Err: frError("scraping aircraft text", reg, URL, err),
 		}
-		done <- result
-		return
 	}
 	aircraft = strings.TrimSpace(aircraftArr[0])
 
 	// airline
 	err = s.Advance("span", "details", 1)
 	if err != nil {
-		result := flightRadarResult{
+		return flightRadarResult{
 			Res: nil,
 			Err: frError("advancing to airline text", reg, URL, err),
 		}
-		done <- result
-		return
 	}
 	airlineArr, err := s.ScrapeText("a", "", 1)
 	if err != nil {
-		result := flightRadarResult{
+		return flightRadarResult{
 			Res: nil,
 			Err: frError("scraping airline text", reg, URL, err),
 		}
-		done <- result
-		return
 	}
 	airline = strings.TrimSpace(airlineArr[0])
 
 	// details
 	res, err := s.ScrapeText("span", "details", 5)
 	if err != nil {
-		result := flightRadarResult{
+		return flightRadarResult{
 			Res: nil,
 			Err: frError("scraping details", reg, URL, err),
 		}
-		done <- result
-		return
 	}
 	operator = strings.TrimSpace(res[0])
 	typeCode = strings.TrimSpace(res[1])
@@ -125,12 +115,10 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarResult) {
 	// flights
 	err = s.Advance("td", "w40 hidden-xs hidden-sm", 3)
 	if err != nil {
-		result := flightRadarResult{
+		return flightRadarResult{
 			Res: fr,
 			Err: frError("advancing to flights", reg, URL, err),
 		}
-		done <- result
-		return
 	}
 
 	for i := 0; i < q.Flights; i++ {
@@ -142,8 +130,7 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarResult) {
 	}
 	fr.Flights = flights
 
-	result := flightRadarResult{Res: fr, Err: nil}
-	done <- result
+	return flightRadarResult{Res: fr, Err: nil}
 }
 
 func getFlight(s *scraper.Scraper) (*flightInfo, error) {
