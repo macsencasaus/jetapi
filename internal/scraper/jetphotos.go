@@ -59,7 +59,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 	pageLinks := []string{}
 	thumbnails := []string{}
 	for i := 0; i < q.Photos; i++ {
-		pageLink, err := s.fetchLinks("a", "result__photoLink", 1)
+		pageLink, err := s.scrapeLinks("a", "result__photoLink", 1)
 		if err != nil {
 			if len(pageLinks) > 0 {
 				break
@@ -72,7 +72,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 			return
 		}
 
-		thumbnail, err := s.fetchLinks("img", "result__photo", 1)
+		thumbnail, err := s.scrapeLinks("img", "result__photo", 1)
 		if err != nil {
 			if len(thumbnails) > 0 {
 				break
@@ -112,7 +112,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
         defer s.close()
 
 		// photo links
-		photoLinkArr, err := s.fetchLinks("img", "large-photo__img", 1)
+		photoLinkArr, err := s.scrapeLinks("img", "large-photo__img", 1)
 		if err != nil {
 			result := jetPhotosRes{
 				Res: nil,
@@ -124,7 +124,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		images[i].Image = photoLinkArr[0]
 
 		// registration
-		res, err := s.fetchText("h4", "headerText4 color-shark", 3)
+		res, err := s.scrapeText("h4", "headerText4 color-shark", 3)
 		if err != nil {
 			result := jetPhotosRes{
 				Res: nil,
@@ -140,7 +140,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		// aircraft
 		s.advance("h2", "header-reset", 1)
 		aircraft := &aircraftStruct{}
-		res, err = s.fetchText("a", "link", 3)
+		res, err = s.scrapeText("a", "link", 3)
 		if err != nil {
 			result := jetPhotosRes{
 				Res: nil,
@@ -156,7 +156,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 
 		// location
 		s.advance("h5", "header-reset", 1)
-		location, err := s.fetchText("a", "link", 1)
+		location, err := s.scrapeText("a", "link", 1)
 		if err != nil {
 			result := jetPhotosRes{
 				Res: nil,
@@ -168,7 +168,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		images[i].Location = location[0]
 
 		// photographer
-		photographer, err := s.fetchText("h6", "header-reset", 1)
+		photographer, err := s.scrapeText("h6", "header-reset", 1)
 		if err != nil {
 			result := jetPhotosRes{
 				Res: nil,

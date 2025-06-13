@@ -83,7 +83,7 @@ type scraper struct {
 type ActionType uint32
 
 const (
-	FETCH ActionType = iota
+	SCRAPE ActionType = iota
 	ADVANCE
 )
 
@@ -95,8 +95,8 @@ func (s *scraper) close() {
 	s.body.Close()
 }
 
-func (s *scraper) fetchLinks(startTag, class string, count int) ([]string, error) {
-	tokens, err := s.fetchNextTokens(startTag, class, count, FETCH, html.StartTagToken)
+func (s *scraper) scrapeLinks(startTag, class string, count int) ([]string, error) {
+	tokens, err := s.scrapeNextTokens(startTag, class, count, SCRAPE, html.StartTagToken)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +112,8 @@ func (s *scraper) fetchLinks(startTag, class string, count int) ([]string, error
 	return links, nil
 }
 
-func (s *scraper) fetchText(startTag, class string, count int) ([]string, error) {
-	tokens, err := s.fetchNextTokens(startTag, class, count, FETCH, html.TextToken)
+func (s *scraper) scrapeText(startTag, class string, count int) ([]string, error) {
+	tokens, err := s.scrapeNextTokens(startTag, class, count, SCRAPE, html.TextToken)
 	if err != nil {
 		return nil, err
 	}
@@ -129,11 +129,11 @@ func (s *scraper) fetchText(startTag, class string, count int) ([]string, error)
 }
 
 func (s *scraper) advance(startTag, class string, count int) error {
-	_, err := s.fetchNextTokens(startTag, class, count, ADVANCE, html.StartTagToken)
+	_, err := s.scrapeNextTokens(startTag, class, count, ADVANCE, html.StartTagToken)
 	return err
 }
 
-func (s *scraper) fetchNextTokens(
+func (s *scraper) scrapeNextTokens(
 	startTag, class string,
 	count int,
 	action ActionType,
@@ -186,7 +186,7 @@ func (s *scraper) fetchNextTokens(
 			token = s.tokenizer.Token()
 		}
 
-		if action == FETCH {
+		if action == SCRAPE {
 			tokens = append(tokens, token)
 			atLeastOne = true
 		}

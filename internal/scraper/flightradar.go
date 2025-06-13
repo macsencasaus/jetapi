@@ -61,7 +61,7 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
 	var flights []*flightInfo
 
 	// aircraft
-	aircraftArr, err := s.fetchText("span", "details", 1)
+	aircraftArr, err := s.scrapeText("span", "details", 1)
 	if err != nil {
 		result := flightRadarRes{
 			Res: nil,
@@ -82,7 +82,7 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
 		done <- result
 		return
 	}
-	airlineArr, err := s.fetchText("a", "", 1)
+	airlineArr, err := s.scrapeText("a", "", 1)
 	if err != nil {
 		result := flightRadarRes{
 			Res: nil,
@@ -94,7 +94,7 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
 	airline = strings.TrimSpace(airlineArr[0])
 
 	// details
-	res, err := s.fetchText("span", "details", 5)
+	res, err := s.scrapeText("span", "details", 5)
 	if err != nil {
 		result := flightRadarRes{
 			Res: nil,
@@ -156,14 +156,14 @@ func getFlight(s *scraper) (*flightInfo, error) {
 	var status string
 
 	// date
-	dateArr, err := s.fetchText("td", "hidden-xs hidden-sm", 1)
+	dateArr, err := s.scrapeText("td", "hidden-xs hidden-sm", 1)
 	if err != nil {
 		return nil, err
 	}
 	date = strings.TrimSpace(dateArr[0])
 
 	// from & to
-	fromToArr, err := s.fetchText("td", "text-center-sm hidden-xs hidden-sm", 2)
+	fromToArr, err := s.scrapeText("td", "text-center-sm hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
 	}
@@ -176,14 +176,14 @@ func getFlight(s *scraper) (*flightInfo, error) {
 	}
 
 	// flight
-	flightArr, err := s.fetchText("a", "fbold", 1)
+	flightArr, err := s.scrapeText("a", "fbold", 1)
 	if err != nil {
 		return nil, err
 	}
 	flight = strings.TrimSpace(flightArr[0])
 
 	// time details
-	res, err := s.fetchText("td", "hidden-xs hidden-sm", 4)
+	res, err := s.scrapeText("td", "hidden-xs hidden-sm", 4)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func getFlight(s *scraper) (*flightInfo, error) {
 	sta = strings.TrimSpace(res[3])
 
 	// status
-	statusArr, err := s.fetchText("td", "hidden-xs hidden-sm", 2)
+	statusArr, err := s.scrapeText("td", "hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
 	}
