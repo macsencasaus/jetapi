@@ -62,8 +62,7 @@ const jsonDiv = document.getElementById("json");
 
 getButton.addEventListener("click", function (_) {
     jsonDiv.innerHTML = "<p>Loading...</p>";
-    const request = queryUrl.textContent.slice(21);
-    fetch(request)
+    fetch(queryUrl.textContent)
         .then((response) => {
             if (!response.ok) {
                 jsonDiv.innerHTML = `
