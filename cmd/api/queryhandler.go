@@ -7,13 +7,13 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/macsencasaus/jetapi/internal/scraper"
+	"github.com/macsencasaus/jetapi/internal/sites"
 )
 
 func (app *application) handleQueries(
 	w http.ResponseWriter,
 	r *http.Request,
-) (*scraper.Queries, error) {
+) (*sites.Queries, error) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
 		return nil, fmt.Errorf("%d", http.StatusMethodNotAllowed)
@@ -47,7 +47,7 @@ func (app *application) handleQueries(
 		flights = 20
 	}
 
-	q := &scraper.Queries{Reg: reg, Photos: photos, Flights: flights}
+	q := &sites.Queries{Reg: reg, Photos: photos, Flights: flights}
 	return q, nil
 }
 

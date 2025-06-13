@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/macsencasaus/jetapi/internal/scraper"
+	"github.com/macsencasaus/jetapi/internal/sites"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -22,8 +22,8 @@ func (app *application) aircraftSearch(w http.ResponseWriter, r *http.Request) {
 		app.notFoundPage(w)
 		return
 	}
-	q = &scraper.Queries{Reg: q.Reg, Photos: 3, Flights: 8}
-	ji, err := scraper.GetJetInfo(q)
+	q = &sites.Queries{Reg: q.Reg, Photos: 3, Flights: 8}
+	ji, err := sites.GetJetInfo(q)
 	if err != nil {
 		app.notFoundPage(w)
 		return
@@ -59,7 +59,7 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonData, err := scraper.GetJSONData(q)
+	jsonData, err := sites.GetJSONData(q)
 	if err != nil {
 		app.serverError(w, err)
 		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)

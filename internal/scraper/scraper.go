@@ -2,80 +2,16 @@ package scraper
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"golang.org/x/net/html"
 )
 
-type JetInfo struct {
-	JetPhotos   *jetPhotosInfo
-	FlightRadar *flightRadarInfo
-}
-
-type Queries struct {
-	Reg     string
-	Photos  int
-	Flights int
-}
-
-func GetJSONData(q *Queries) ([]byte, error) {
-	ji, err := GetJetInfo(q)
-	if err != nil {
-		return nil, fmt.Errorf("Jetphotos Error: %v", err)
-	}
-	jsonData, err := json.Marshal(ji)
-	if err != nil {
-		return nil, fmt.Errorf("FlightRadar Error: %v", err)
-	}
-
-	return jsonData, nil
-}
-
-func GetJetInfo(q *Queries) (*JetInfo, error) {
-	donejp := make(chan jetPhotosRes)
-	donefr := make(chan flightRadarRes)
-
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		getJetPhotosStruct(q, donejp)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		getFlightRadarStruct(q, donefr)
-	}()
-
-	go func() {
-		wg.Wait()
-		close(donejp)
-		close(donefr)
-	}()
-
-	jp := <-donejp
-	fr := <-donefr
-
-	if jp.Err != nil {
-		return nil, jp.Err
-	}
-	if fr.Err != nil {
-		return nil, fr.Err
-	}
-
-	j := &JetInfo{JetPhotos: jp.Res, FlightRadar: fr.Res}
-	return j, nil
-}
-
-type scraper struct {
+type Scraper struct {
 	body      io.ReadCloser
 	tokenizer *html.Tokenizer
 }
@@ -87,15 +23,15 @@ const (
 	ADVANCE
 )
 
-func newScraper(body io.ReadCloser) *scraper {
-	return &scraper{body: body}
+func NewScraper(body io.ReadCloser) *Scraper {
+	return &Scraper{body: body}
 }
 
-func (s *scraper) close() {
+func (s *Scraper) Close() {
 	s.body.Close()
 }
 
-func (s *scraper) scrapeLinks(startTag, class string, count int) ([]string, error) {
+func (s *Scraper) ScrapeLinks(startTag, class string, count int) ([]string, error) {
 	tokens, err := s.scrapeNextTokens(startTag, class, count, SCRAPE, html.StartTagToken)
 	if err != nil {
 		return nil, err
@@ -112,7 +48,7 @@ func (s *scraper) scrapeLinks(startTag, class string, count int) ([]string, erro
 	return links, nil
 }
 
-func (s *scraper) scrapeText(startTag, class string, count int) ([]string, error) {
+func (s *Scraper) ScrapeText(startTag, class string, count int) ([]string, error) {
 	tokens, err := s.scrapeNextTokens(startTag, class, count, SCRAPE, html.TextToken)
 	if err != nil {
 		return nil, err
@@ -128,12 +64,12 @@ func (s *scraper) scrapeText(startTag, class string, count int) ([]string, error
 	return data, nil
 }
 
-func (s *scraper) advance(startTag, class string, count int) error {
+func (s *Scraper) Advance(startTag, class string, count int) error {
 	_, err := s.scrapeNextTokens(startTag, class, count, ADVANCE, html.StartTagToken)
 	return err
 }
 
-func (s *scraper) scrapeNextTokens(
+func (s *Scraper) scrapeNextTokens(
 	startTag, class string,
 	count int,
 	action ActionType,
@@ -197,11 +133,11 @@ func (s *scraper) scrapeNextTokens(
 	return tokens, nil
 }
 
-func (s *scraper) Errorf(format string, a ...any) error {
+func (s *Scraper) Errorf(format string, a ...any) error {
 	return fmt.Errorf("Scraper Error: %s", fmt.Sprintf(format, a...))
 }
 
-func fetchHTML(URL string) (io.ReadCloser, error) {
+func FetchHTML(URL string) (io.ReadCloser, error) {
 	tlsConfig := &tls.Config{
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,

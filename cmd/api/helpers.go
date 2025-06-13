@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/macsencasaus/jetapi/internal/scraper"
+	"github.com/macsencasaus/jetapi/internal/sites"
 )
 
 func (app *application) serverError(w http.ResponseWriter, err error) {
@@ -31,7 +31,7 @@ func (app *application) render(
 	w http.ResponseWriter,
 	status int,
 	page string,
-	data *scraper.JetInfo,
+	data *sites.JetInfo,
 ) {
 	ts, ok := app.templateCache[page]
 	if !ok {
