@@ -27,11 +27,11 @@ type Queries struct {
 func GetJSONData(q *Queries) ([]byte, error) {
 	ji, err := GetJetInfo(q)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Jetphotos Error: %v", err)
 	}
 	jsonData, err := json.Marshal(ji)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("FlightRadar Error: %v", err)
 	}
 
 	return jsonData, nil
@@ -118,7 +118,8 @@ func (s *scraper) fetchText(startTag, class string, quantity int) ([]string, err
 		return nil, err
 	}
 	if len(tokens) != quantity {
-		return nil, fmt.Errorf("text not found")
+		return nil, s.Errorf("text not found with start tag %s, class %s, wanted %d, got %d",
+			startTag, class, quantity, len(tokens))
 	}
 	data := make([]string, len(tokens))
 	for i := 0; i < quantity; i++ {
@@ -151,9 +152,9 @@ func (s *scraper) fetchNextTokens(
 				if atLeastOne {
 					break
 				}
-				return nil, fmt.Errorf("query not found")
+				return nil, s.Errorf("unexpected EOF")
 			}
-			return nil, fmt.Errorf("error tokenizing html %v", s.tokenizer.Err())
+			return nil, s.Errorf("error tokenizing html %s", s.tokenizer.Err().Error())
 		}
 
 		if tokenType != html.StartTagToken {
@@ -206,6 +207,10 @@ func (s *scraper) fetchNextTokens(
 	return tokens, nil
 }
 
+func (s *scraper) Errorf(format string, a ...any) error {
+	return fmt.Errorf("Scraper Error: %s", fmt.Sprintf(format, a...))
+}
+
 func fetchHTML(URL string) (io.ReadCloser, error) {
 	tlsConfig := &tls.Config{
 		CipherSuites: []uint16{
@@ -230,7 +235,7 @@ func fetchHTML(URL string) (io.ReadCloser, error) {
 
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error creating request: %s", err.Error())
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
@@ -241,7 +246,7 @@ func fetchHTML(URL string) (io.ReadCloser, error) {
 	for i := 0; i < 3; i++ {
 		resp, err = client.Do(req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error sending request: %s", err.Error())
 		}
 
 		if resp.StatusCode == http.StatusOK {
