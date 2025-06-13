@@ -54,6 +54,8 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 	}
 
 	s := newScraper(b)
+    defer s.close()
+
 	pageLinks := []string{}
 	thumbnails := []string{}
 	for i := 0; i < q.Photos; i++ {
@@ -85,7 +87,6 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		pageLinks = append(pageLinks, pageLink[0])
 		thumbnails = append(thumbnails, thumbnail[0])
 	}
-	s.close()
 
 	imgs := len(pageLinks)
 
@@ -108,6 +109,7 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 		}
 
 		s := newScraper(b)
+        defer s.close()
 
 		// photo links
 		photoLinkArr, err := s.fetchLinks("img", "large-photo__img", 1)
@@ -176,8 +178,6 @@ func getJetPhotosStruct(q *Queries, done chan jetPhotosRes) {
 			return
 		}
 		images[i].Photographer = photographer[0]
-
-		s.close()
 	}
 
 	j := &jetPhotosInfo{

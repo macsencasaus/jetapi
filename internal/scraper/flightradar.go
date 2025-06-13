@@ -47,7 +47,9 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
 		done <- result
 		return
 	}
+
 	s := newScraper(b)
+    defer s.close()
 
 	var aircraft string
 	var airline string
