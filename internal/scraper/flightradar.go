@@ -2,7 +2,6 @@ package scraper
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -37,10 +36,14 @@ type flightRadarRes struct {
 const frAircraftURL = "https://www.flightradar24.com/data/aircraft/"
 
 func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
-	URL := fmt.Sprintf("%s%s", frAircraftURL, q.Reg)
+	reg := q.Reg
+	URL := fmt.Sprintf("%s%s", frAircraftURL, reg)
 	b, err := fetchHTML(URL)
 	if err != nil {
-		result := flightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{
+			Res: nil,
+			Err: frError("fetching fr page", reg, URL, err),
+		}
 		done <- result
 		return
 	}
@@ -55,31 +58,46 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
 	var modeS string
 	var flights []*flightInfo
 
+	// aircraft
 	aircraftArr, err := s.fetchText("span", "details", 1)
 	if err != nil {
-		result := flightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{
+			Res: nil,
+			Err: frError("scraping aircraft text", reg, URL, err),
+		}
 		done <- result
 		return
 	}
 	aircraft = strings.TrimSpace(aircraftArr[0])
 
+	// airline
 	err = s.advance("span", "details", 1)
 	if err != nil {
-		result := flightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{
+			Res: nil,
+			Err: frError("advancing to airline text", reg, URL, err),
+		}
 		done <- result
 		return
 	}
 	airlineArr, err := s.fetchText("a", "", 1)
 	if err != nil {
-		result := flightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{
+			Res: nil,
+			Err: frError("scraping airline text", reg, URL, err),
+		}
 		done <- result
 		return
 	}
 	airline = strings.TrimSpace(airlineArr[0])
 
+	// details
 	res, err := s.fetchText("span", "details", 5)
 	if err != nil {
-		result := flightRadarRes{Res: nil, Err: err}
+		result := flightRadarRes{
+			Res: nil,
+			Err: frError("scraping details", reg, URL, err),
+		}
 		done <- result
 		return
 	}
@@ -100,10 +118,13 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
 		Flights:      flights,
 	}
 
+	// flights
 	err = s.advance("td", "w40 hidden-xs hidden-sm", 3)
 	if err != nil {
-		log.Printf("flights: %v\n", err)
-		result := flightRadarRes{Res: fr, Err: nil}
+		result := flightRadarRes{
+			Res: fr,
+			Err: frError("advancing to flights", reg, URL, err),
+		}
 		done <- result
 		return
 	}
@@ -111,9 +132,7 @@ func getFlightRadarStruct(q *Queries, done chan flightRadarRes) {
 	for i := 0; i < q.Flights; i++ {
 		flight, err := getFlight(s)
 		if err != nil {
-			if err.Error() == "query not found" {
-				break
-			}
+			break
 		}
 		flights = append(flights, flight)
 	}
@@ -134,12 +153,14 @@ func getFlight(s *scraper) (*flightInfo, error) {
 	var sta string
 	var status string
 
+	// date
 	dateArr, err := s.fetchText("td", "hidden-xs hidden-sm", 1)
 	if err != nil {
 		return nil, err
 	}
 	date = strings.TrimSpace(dateArr[0])
 
+	// from & to
 	fromToArr, err := s.fetchText("td", "text-center-sm hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
@@ -152,12 +173,14 @@ func getFlight(s *scraper) (*flightInfo, error) {
 		return nil, err
 	}
 
+	// flight
 	flightArr, err := s.fetchText("a", "fbold", 1)
 	if err != nil {
 		return nil, err
 	}
 	flight = strings.TrimSpace(flightArr[0])
 
+	// time details
 	res, err := s.fetchText("td", "hidden-xs hidden-sm", 4)
 	if err != nil {
 		return nil, err
@@ -167,6 +190,7 @@ func getFlight(s *scraper) (*flightInfo, error) {
 	atd = strings.TrimSpace(res[2])
 	sta = strings.TrimSpace(res[3])
 
+	// status
 	statusArr, err := s.fetchText("td", "hidden-xs hidden-sm", 2)
 	if err != nil {
 		return nil, err
@@ -185,4 +209,8 @@ func getFlight(s *scraper) (*flightInfo, error) {
 		Status:     status,
 	}
 	return f, nil
+}
+
+func frError(msg, reg, URL string, err error) error {
+	return fmt.Errorf("Error %s for %s at %s: %s", msg, reg, URL, err.Error())
 }
