@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"runtime/debug"
 	"strconv"
+	"time"
 
 	"github.com/macsencasaus/jetapi/internal/sites"
 )
@@ -136,4 +137,33 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	return cache, nil
+}
+
+func (app *application) statsLogger() {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		app.statsMu.Lock()
+
+		var avgLatency time.Duration
+		if app.apiCalls > 0 {
+			avgLatency = app.totalLatency / time.Duration(app.apiCalls)
+		}
+
+		msg := `
++-----------------------------+
+|        API Statistics       |
++-----------------------------+
+| Calls to /api     : %7d |
+| Average Latency   : %7s |
++-----------------------------+`
+
+		app.infoLog.Printf(msg, app.apiCalls, avgLatency.Round(time.Millisecond))
+
+		app.apiCalls = 0
+		app.totalLatency = 0
+
+		app.statsMu.Unlock()
+	}
 }

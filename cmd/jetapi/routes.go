@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/macsencasaus/jetapi/internal/sites"
 )
+
+type handlerFunc = func(http.ResponseWriter, *http.Request)
 
 func (app *application) routes() *http.ServeMux {
 	mux := http.NewServeMux()
@@ -15,7 +18,7 @@ func (app *application) routes() *http.ServeMux {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/api", app.api)
+	mux.HandleFunc("/api", app.statsMiddleware(app.api))
 	mux.HandleFunc("/aircraft", app.aircraftSearch)
 	mux.HandleFunc("/documentation", app.documentation)
 	mux.HandleFunc("/querybuilder", app.queryBuilder)
@@ -90,4 +93,18 @@ func (app *application) queryBuilder(w http.ResponseWriter, r *http.Request) {
 func (app *application) notFoundPage(w http.ResponseWriter) {
 	page := "notfound.tmpl.html"
 	app.render(w, http.StatusNotFound, page, nil)
+}
+
+func (app *application) statsMiddleware(next handlerFunc) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		now := time.Now()
+		next(w, r)
+		latency := time.Since(now)
+
+		app.statsMu.Lock()
+		defer app.statsMu.Unlock()
+
+		app.apiCalls++
+		app.totalLatency += latency
+	}
 }

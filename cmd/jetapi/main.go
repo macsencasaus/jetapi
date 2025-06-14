@@ -6,12 +6,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
+	"time"
 )
 
 type application struct {
 	errorLog      *log.Logger
 	infoLog       *log.Logger
 	templateCache map[string]*template.Template
+
+	statsMu      sync.Mutex
+	apiCalls     int
+	totalLatency time.Duration
 }
 
 func main() {
@@ -46,6 +52,9 @@ func main() {
 		ErrorLog: errorLog,
 		Handler:  app.routes(),
 	}
+
+	app.infoLog.Print("Starting stats logger")
+	go app.statsLogger()
 
 	app.infoLog.Printf("Starting server on %s", addr)
 	err = srv.ListenAndServe()
