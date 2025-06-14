@@ -1,35 +1,33 @@
 # jetapi
-[JetAPI](http://www.jetapi.xyz)
+[JetAPI](https://www.jetapi.dev)
 
 An API to gather information from [JetPhotos](https://www.JetPhotos.com) and [FlightRadar24](https://www.FlightRadar24.com).
 
 ## Documentation
-See the [documentation](http://www.jetapi.xyz/documentation) for query parameters.
+See the [documentation](https://www.jetapi.dev/documentation) for more information regarding the usage of the API.
 
 ## Getting Started On Your Own
-Clone 
+After cloning the project, one can simply run
 ```
-git clone https://github.com/macsencasaus/jetapi.git
+make run
 ```
-Then
-```
-go run ./cmd/api
-```
-Will automatically serve on port :8080.
+to build and run the program.
 
-## Query
-For now, only one query string is available which is the registration of the aircraft under the `/api` fixed path.
-For example:
+If you do not have `make`,
 ```
-http://localhost:8080/api?reg=g-xlea
+go run ./cmd/jetapi
 ```
-This will return information from both sites including images and prior flights for the aircraft with the registration `g-xlea`!
+suffices.
+
+Then one can visit [localhost:8080](http://localhost:8080) to view the documentation and build a query for your local instance.
 
 ## More
-Works best with commercial airliners. GA aircraft may cause JSON encoding errors due to the variability in FlightRadar's page. Registrations not found also return JSON encoding errors.
+The API works best with commercial airliners. 
+GA aircraft may cause JSON encoding errors due to the variability in FlightRadar's page. 
+Registrations not found also return JSON encoding errors.
 
-You may also specify the port using the `-addr` flag:
+You may also specify the port and host by setting the `PORT` and `HOST` environment variables respectively:
 ```
-go run ./cmd/api -addr=:4000
+HOST=0.0.0.0 PORT=4000 make run
 ```
-Will start the server on port `4000`. 
+will serve to `0.0.0.0:4000`.
