@@ -53,7 +53,7 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 	if q.OnlyJP == q.OnlyFR {
 		sr, err := sites.Scrape(q)
 		if sr == nil {
-			app.serverError(w, err)
+			app.notFound(w)
 			return
 		}
 
@@ -65,7 +65,7 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 	} else if q.OnlyJP {
 		jpRes, err := sites.ScrapeJetPhotos(q)
 		if err != nil {
-			app.serverError(w, err)
+			app.notFound(w)
 			return
 		}
 
@@ -73,7 +73,7 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 	} else if q.OnlyFR {
 		frRes, err := sites.ScrapeFlightRadar(q)
 		if err != nil {
-			app.serverError(w, err)
+			app.notFound(w)
 			return
 		}
 
