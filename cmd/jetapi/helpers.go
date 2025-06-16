@@ -14,9 +14,13 @@ import (
 	"github.com/macsencasaus/jetapi/internal/sites"
 )
 
-func (app *application) serverError(w http.ResponseWriter, err error) {
+func (app *application) logErr(err error) {
 	trace := fmt.Sprintf("%v\n%s", err, debug.Stack())
 	app.errorLog.Println(trace)
+}
+
+func (app *application) serverError(w http.ResponseWriter, err error) {
+	app.logErr(err)
 	status := http.StatusInternalServerError
 	http.Error(w, http.StatusText(status), status)
 }

@@ -61,6 +61,7 @@ const getButton = document.getElementById("get");
 const jsonDiv = document.getElementById("json");
 
 getButton.addEventListener("click", function (_) {
+    reg = regField.value;
     jsonDiv.innerHTML = "<p>Loading...</p>";
     fetch(queryUrl.textContent)
         .then((response) => {
@@ -74,7 +75,6 @@ getButton.addEventListener("click", function (_) {
         })
         .then((data) => {
             const jsonString = JSON.stringify(data, null, 2);
-            const reg = data.JetPhotos.Reg;
             jsonDiv.innerHTML = ` 
                 <div class="json_output">
                     <pre id="raw_json">${jsonString}</pre>

@@ -43,9 +43,11 @@ func Scrape(q *APIQueries) (*ScrapeResult, error) {
 		return nil
 	})
 
-	if err := g.Wait(); err != nil {
+	err := g.Wait()
+
+	if err != nil && jpResult == nil && frResult == nil {
 		return nil, err
 	}
 
-	return &ScrapeResult{JetPhotos: jpResult, FlightRadar: frResult}, nil
+	return &ScrapeResult{JetPhotos: jpResult, FlightRadar: frResult}, err
 }
