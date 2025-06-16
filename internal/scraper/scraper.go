@@ -14,6 +14,7 @@ import (
 type Scraper struct {
 	body      io.ReadCloser
 	tokenizer *html.Tokenizer
+	tokens    []html.Token
 }
 
 type ActionType uint32
@@ -53,12 +54,8 @@ func (s *Scraper) ScrapeText(startTag, class string, count int) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	if len(tokens) != count {
-		return nil, s.Errorf("text not found with start tag %s, class %s, wanted %d, got %d",
-			startTag, class, count, len(tokens))
-	}
 	data := make([]string, len(tokens))
-	for i := 0; i < count; i++ {
+	for i := 0; i < len(data); i++ {
 		data[i] = tokens[i].Data
 	}
 	return data, nil
@@ -67,6 +64,23 @@ func (s *Scraper) ScrapeText(startTag, class string, count int) ([]string, error
 func (s *Scraper) Advance(startTag, class string, count int) error {
 	_, err := s.scrapeNextTokens(startTag, class, count, ADVANCE, html.StartTagToken)
 	return err
+}
+
+func (s *Scraper) TryScrapeText() (string, bool) {
+	tt := s.tokenizer.Next()
+	t := s.tokenizer.Token()
+
+	for strings.TrimSpace(t.Data) == "" {
+		tt = s.tokenizer.Next()
+		t = s.tokenizer.Token()
+	}
+
+	if tt != html.TextToken {
+		s.tokens = append(s.tokens, t)
+		return "", false
+	}
+
+	return t.Data, true
 }
 
 func (s *Scraper) scrapeNextTokens(
@@ -78,43 +92,17 @@ func (s *Scraper) scrapeNextTokens(
 	if s.tokenizer == nil {
 		s.tokenizer = html.NewTokenizer(s.body)
 	}
-	var tokens []html.Token
+	var resultTokens []html.Token
 	atLeastOne := false
 
 	for count > 0 {
-		tokenType := s.tokenizer.Next()
-		if tokenType == html.ErrorToken {
-			if s.tokenizer.Err() == io.EOF {
-				if atLeastOne {
-					break
-				}
-				return nil, s.Errorf("unexpected EOF")
+		token, err := s.nextToken(html.StartTagToken, startTag, class)
+
+		if err != nil {
+			if atLeastOne {
+				break
 			}
-			return nil, s.Errorf("Error tokenizing html: %v", s.tokenizer.Err())
-		}
-
-		if tokenType != html.StartTagToken {
-			continue
-		}
-
-		token := s.tokenizer.Token()
-		if token.Data != startTag {
-			continue
-		}
-
-		attr := token.Attr
-
-		if class != "" {
-			classPos := -1
-			for i := 0; i < len(attr); i++ {
-				if attr[i].Key == "class" {
-					classPos = i
-					break
-				}
-			}
-			if classPos == -1 || attr[classPos].Val != class {
-				continue
-			}
+			return nil, err
 		}
 
 		if tt == html.TextToken {
@@ -123,18 +111,60 @@ func (s *Scraper) scrapeNextTokens(
 		}
 
 		if action == SCRAPE {
-			tokens = append(tokens, token)
+			resultTokens = append(resultTokens, token)
 			atLeastOne = true
 		}
 
 		count--
 	}
 
-	return tokens, nil
+	return resultTokens, nil
+}
+
+func (s *Scraper) nextToken(tt html.TokenType, data, class string) (html.Token, error) {
+	for i, t := range s.tokens {
+		if t.Type == tt && t.Data == data && tokenHasClass(&t, class) {
+			s.tokens = s.tokens[i+1:]
+			return t, nil
+		}
+	}
+
+	var nilToken html.Token
+	for {
+		tokenType := s.tokenizer.Next()
+		if tokenType == html.ErrorToken {
+			if s.tokenizer.Err() == io.EOF {
+				return nilToken, s.Errorf("tag '%s' with class '%s' not found", data, class)
+			}
+			return nilToken, s.Errorf("Error tokenizing html: %v", s.tokenizer.Err())
+		}
+		t := s.tokenizer.Token()
+		s.tokens = append(s.tokens, t)
+
+		if tokenType == tt && t.Data == data && tokenHasClass(&t, class) {
+			s.tokens = s.tokens[len(s.tokens):]
+			return t, nil
+		}
+	}
 }
 
 func (s *Scraper) Errorf(format string, a ...any) error {
 	return fmt.Errorf("Scraper Error: %s", fmt.Sprintf(format, a...))
+}
+
+func tokenHasClass(t *html.Token, class string) bool {
+	if class == "" {
+		return true
+	}
+
+	attrs := t.Attr
+
+	for _, attr := range attrs {
+		if attr.Key == "class" && attr.Val == class {
+			return true
+		}
+	}
+	return false
 }
 
 func FetchHTML(URL string) (io.ReadCloser, error) {
