@@ -15,6 +15,8 @@ type APIQueries struct {
 	Reg     string
 	Photos  int
 	Flights int
+	OnlyJP  bool
+	OnlyFR  bool
 }
 
 func Scrape(q *APIQueries) (*ScrapeResult, error) {
@@ -26,7 +28,7 @@ func Scrape(q *APIQueries) (*ScrapeResult, error) {
 	g, _ := errgroup.WithContext(context.Background())
 
 	g.Go(func() error {
-		res, err := scrapeJetPhotos(q)
+		res, err := ScrapeJetPhotos(q)
 		if err != nil {
 			return fmt.Errorf("JetPhotos Error: %v", err)
 		}
@@ -35,7 +37,7 @@ func Scrape(q *APIQueries) (*ScrapeResult, error) {
 	})
 
 	g.Go(func() error {
-		res, err := scrapeFlightRadar(q)
+		res, err := ScrapeFlightRadar(q)
 		if err != nil {
 			return fmt.Errorf("FlightRadar Error: %v", err)
 		}

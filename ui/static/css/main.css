@@ -238,6 +238,7 @@ button.download {
     width: 50%;
     display: flex;
     justify-content: space-around;
+    margin-top: 10px;
 }
 
 .qb_options input {

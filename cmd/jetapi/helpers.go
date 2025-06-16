@@ -79,6 +79,9 @@ func (app *application) parseAPIQueries(
 		return nil, fmt.Errorf("%d", http.StatusBadRequest)
 	}
 
+	onlyJP := queryParams.Get("only_jp") == "true"
+	onlyFR := queryParams.Get("only_fr") == "true"
+
 	photos, err := handleNumQuery(queryParams, "photos")
 	if err != nil {
 		return nil, err
@@ -95,7 +98,13 @@ func (app *application) parseAPIQueries(
 		flights = 20
 	}
 
-	q := &sites.APIQueries{Reg: reg, Photos: photos, Flights: flights}
+	q := &sites.APIQueries{
+		Reg:     reg,
+		Photos:  photos,
+		Flights: flights,
+		OnlyJP:  onlyJP,
+		OnlyFR:  onlyFR,
+	}
 	return q, nil
 }
 

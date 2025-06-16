@@ -48,17 +48,38 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sr, err := sites.Scrape(q)
-	if sr == nil {
-		app.serverError(w, err)
-		return
+	var jsonResult []byte
+
+	if q.OnlyJP == q.OnlyFR {
+		sr, err := sites.Scrape(q)
+		if sr == nil {
+			app.serverError(w, err)
+			return
+		}
+
+		if err != nil {
+			app.logErr(fmt.Errorf("Partial Error: %v", err))
+		}
+
+		jsonResult, err = json.Marshal(sr)
+	} else if q.OnlyJP {
+		jpRes, err := sites.ScrapeJetPhotos(q)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		jsonResult, err = json.Marshal(jpRes)
+	} else if q.OnlyFR {
+		frRes, err := sites.ScrapeFlightRadar(q)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		jsonResult, err = json.Marshal(frRes)
 	}
 
-	if err != nil {
-		app.logErr(fmt.Errorf("Partial Error: %v", err))
-	}
-
-	jsonResult, err := json.Marshal(sr)
 	if err != nil {
 		app.serverError(w, fmt.Errorf("Error encoding json: %v", err))
 		return

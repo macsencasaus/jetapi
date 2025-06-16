@@ -32,7 +32,7 @@ type FlightAttributes struct {
 
 const frAircraftURL = "https://www.flightradar24.com/data/aircraft/"
 
-func scrapeFlightRadar(q *APIQueries) (*FlightRadarResult, error) {
+func ScrapeFlightRadar(q *APIQueries) (*FlightRadarResult, error) {
 	reg := q.Reg
 	URL := fmt.Sprintf("%s%s", frAircraftURL, reg)
 	b, err := scraper.FetchHTML(URL)
