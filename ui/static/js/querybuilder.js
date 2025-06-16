@@ -4,6 +4,8 @@ regField.value = "";
 const queryUrl = document.getElementById("query_url");
 const photosInput = document.getElementById("photos_input");
 const flightsInput = document.getElementById("flights_input");
+const onlyJPInput = document.getElementById("only_jp");
+const onlyFRInput = document.getElementById("only_fr");
 
 const apiUrl = `${window.location.origin}/api?reg=`;
 
@@ -33,6 +35,13 @@ document.getElementById("main").addEventListener("input", function (_) {
     if (flights != 20) {
         query += "&flights=" + flights;
     }
+    if (onlyJPInput.checked) {
+        query += "&only_jp=true";
+    }
+    if (onlyFRInput.checked) {
+        query += "&only_fr=true";
+    }
+
     if (regField.value != "") {
         queryUrl.textContent = query;
     } else {
@@ -61,6 +70,7 @@ const getButton = document.getElementById("get");
 const jsonDiv = document.getElementById("json");
 
 getButton.addEventListener("click", function (_) {
+    reg = regField.value;
     jsonDiv.innerHTML = "<p>Loading...</p>";
     fetch(queryUrl.textContent)
         .then((response) => {
@@ -74,7 +84,6 @@ getButton.addEventListener("click", function (_) {
         })
         .then((data) => {
             const jsonString = JSON.stringify(data, null, 2);
-            const reg = data.JetPhotos.Reg;
             jsonDiv.innerHTML = ` 
                 <div class="json_output">
                     <pre id="raw_json">${jsonString}</pre>

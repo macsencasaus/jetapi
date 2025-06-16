@@ -32,7 +32,7 @@ type FlightAttributes struct {
 
 const frAircraftURL = "https://www.flightradar24.com/data/aircraft/"
 
-func scrapeFlightRadar(q *APIQueries) (*FlightRadarResult, error) {
+func ScrapeFlightRadar(q *APIQueries) (*FlightRadarResult, error) {
 	reg := q.Reg
 	URL := fmt.Sprintf("%s%s", frAircraftURL, reg)
 	b, err := scraper.FetchHTML(URL)
@@ -51,19 +51,27 @@ func scrapeFlightRadar(q *APIQueries) (*FlightRadarResult, error) {
 	aircraft := strings.TrimSpace(aircraftArr[0])
 
 	// airline
+	// can either be a link, typically for commerical airlines,
+	// or text, for private owners
 	err = s.Advance("span", "details", 1)
 	if err != nil {
 		return nil, frError("advancing to airline text", reg, URL, err)
 	}
-	airlineArr, err := s.ScrapeText("a", "", 1)
-	if err != nil {
-		return nil, frError("scraping airline text", reg, URL, err)
+	airline, ok := s.TryScrapeText()
+	if !ok {
+		airlineArr, err := s.ScrapeText("a", "", 1)
+		if err != nil {
+			return nil, frError("scraping airline text", reg, URL, err)
+		}
+		airline = strings.TrimSpace(airlineArr[0])
+	} else {
+		airline = strings.TrimSpace(airline)
 	}
-	airline := strings.TrimSpace(airlineArr[0])
 
 	// details
 	res, err := s.ScrapeText("span", "details", 5)
-	if err != nil {
+	if err != nil || len(res) != 5 {
+		fmt.Printf("details: %v\n", res)
 		return nil, frError("scraping details", reg, URL, err)
 	}
 	operator := strings.TrimSpace(res[0])

@@ -48,13 +48,38 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sr, err := sites.Scrape(q)
-	if err != nil {
-		app.serverError(w, err)
-		return
+	var jsonResult []byte
+
+	if q.OnlyJP == q.OnlyFR {
+		sr, err := sites.Scrape(q)
+		if sr == nil {
+			app.serverError(w, err)
+			return
+		}
+
+		if err != nil {
+			app.logErr(fmt.Errorf("Partial Error: %v", err))
+		}
+
+		jsonResult, err = json.Marshal(sr)
+	} else if q.OnlyJP {
+		jpRes, err := sites.ScrapeJetPhotos(q)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		jsonResult, err = json.Marshal(jpRes)
+	} else if q.OnlyFR {
+		frRes, err := sites.ScrapeFlightRadar(q)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		jsonResult, err = json.Marshal(frRes)
 	}
 
-	jsonResult, err := json.Marshal(sr)
 	if err != nil {
 		app.serverError(w, fmt.Errorf("Error encoding json: %v", err))
 		return
@@ -72,12 +97,12 @@ func (app *application) aircraftSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q = &sites.APIQueries{Reg: q.Reg, Photos: 3, Flights: 8}
-	ji, err := sites.Scrape(q)
-	if err != nil {
+	sr, err := sites.Scrape(q)
+	if sr == nil {
 		app.notFoundPage(w)
 		return
 	}
-	app.render(w, http.StatusOK, page, ji)
+	app.render(w, http.StatusOK, page, sr)
 }
 
 func (app *application) documentation(w http.ResponseWriter, r *http.Request) {

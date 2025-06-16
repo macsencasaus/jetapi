@@ -29,7 +29,7 @@ type ImageAttributes struct {
 
 const jpHomeURL = "https://www.jetphotos.com"
 
-func scrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
+func ScrapeJetPhotos(q *APIQueries) (*JetPhotosResult, error) {
 	reg := q.Reg
 	if q.Photos == 0 {
 		return &JetPhotosResult{Reg: strings.ToUpper(reg)}, nil
