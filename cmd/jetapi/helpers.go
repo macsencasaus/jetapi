@@ -157,11 +157,11 @@ func (app *application) statsLogger() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		app.statsMu.Lock()
-
+		calls := app.apiCalls.Swap(0)
+		totalNs := app.totalLatency.Swap(0)
 		var avgLatency time.Duration
-		if app.apiCalls > 0 {
-			avgLatency = app.totalLatency / time.Duration(app.apiCalls)
+		if calls > 0 {
+			avgLatency = time.Duration(totalNs / int64(calls))
 		}
 
 		msg := `
@@ -172,11 +172,6 @@ func (app *application) statsLogger() {
 | Average Latency   : %7s |
 +-----------------------------+`
 
-		app.infoLog.Printf(msg, app.apiCalls, avgLatency.Round(time.Millisecond))
-
-		app.apiCalls = 0
-		app.totalLatency = 0
-
-		app.statsMu.Unlock()
+		app.infoLog.Printf(msg, calls, avgLatency.Round(time.Millisecond))
 	}
 }

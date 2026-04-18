@@ -18,7 +18,7 @@ func (app *application) routes() *http.ServeMux {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/api", app.statsMiddleware(app.api))
+	mux.HandleFunc("/api", app.api)
 	mux.HandleFunc("/aircraft", app.aircraftSearch)
 	mux.HandleFunc("/documentation", app.documentation)
 	mux.HandleFunc("/querybuilder", app.queryBuilder)
@@ -36,6 +36,17 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) api(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	countable := false
+	defer func() {
+		if !countable {
+			return
+		}
+		latency := time.Since(start)
+		app.apiCalls.Add(1)
+		app.totalLatency.Add(latency.Nanoseconds())
+	}()
+
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
 		app.clientError(w, http.StatusMethodNotAllowed)
@@ -47,6 +58,7 @@ func (app *application) api(w http.ResponseWriter, r *http.Request) {
 		app.badRequest(w)
 		return
 	}
+	countable = true
 
 	var jsonResult []byte
 
@@ -118,18 +130,4 @@ func (app *application) queryBuilder(w http.ResponseWriter, r *http.Request) {
 func (app *application) notFoundPage(w http.ResponseWriter) {
 	page := "notfound.tmpl.html"
 	app.render(w, http.StatusNotFound, page, nil)
-}
-
-func (app *application) statsMiddleware(next handlerFunc) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		now := time.Now()
-		next(w, r)
-		latency := time.Since(now)
-
-		app.statsMu.Lock()
-		defer app.statsMu.Unlock()
-
-		app.apiCalls++
-		app.totalLatency += latency
-	}
 }

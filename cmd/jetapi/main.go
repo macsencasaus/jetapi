@@ -6,8 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
-	"time"
+	"sync/atomic"
 )
 
 type application struct {
@@ -15,9 +14,8 @@ type application struct {
 	infoLog       *log.Logger
 	templateCache map[string]*template.Template
 
-	statsMu      sync.Mutex
-	apiCalls     int
-	totalLatency time.Duration
+	apiCalls     atomic.Uint64
+	totalLatency atomic.Int64 // stored as nanoseconds
 }
 
 func main() {
